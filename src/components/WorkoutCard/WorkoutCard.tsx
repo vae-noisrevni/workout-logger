@@ -41,7 +41,7 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                     </Text>
                     <Pressable
                         onPress={onRemove}
-                        hitSlop={12}
+                        hitSlop={14}
                         style={styles.removeButton}
                     >
                         <Ionicons
@@ -52,25 +52,16 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                     </Pressable>
                 </View>
 
-                <View style={styles.setsGrid}>
+                <View style={styles.setsList}>
                     {exercise.sets.map((set, index) => (
-                        <View
-                            key={set.id}
-                            style={[
-                                styles.setBox,
-                                {
-                                    backgroundColor: colors.surfaceElevated,
-                                    borderColor: exercise.color,
-                                },
-                            ]}
-                        >
+                        <View key={set.id} style={styles.setRow}>
                             <Text
                                 style={[
                                     styles.setIndex,
                                     { color: colors.textSecondary },
                                 ]}
                             >
-                                #{index + 1}
+                                {index + 1}
                             </Text>
                             <Text
                                 style={[
@@ -79,9 +70,27 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                                 ]}
                             >
                                 {set.reps}
-                                {exercise.type !== 'bodyweight' &&
-                                    ` × ${set.weight}кг`}
+                                <Text style={{ color: colors.textSecondary }}>
+                                    {' '}
+                                    повт.
+                                </Text>
                             </Text>
+                            {exercise.type !== 'bodyweight' && (
+                                <Text
+                                    style={[
+                                        styles.setWeight,
+                                        { color: colors.textPrimary },
+                                    ]}
+                                >
+                                    {set.weight}
+                                    <Text
+                                        style={{ color: colors.textSecondary }}
+                                    >
+                                        {' '}
+                                        кг
+                                    </Text>
+                                </Text>
+                            )}
                         </View>
                     ))}
                 </View>
@@ -119,26 +128,26 @@ const styles = StyleSheet.create({
     removeButton: {
         padding: 2,
     },
-    setsGrid: {
+    setsList: { gap: 6 },
+    setRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    setBox: {
-        minWidth: 64,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 10,
-        borderWidth: 1.5,
         alignItems: 'center',
+        gap: 12,
     },
     setIndex: {
-        fontSize: 10,
-        fontWeight: '500',
+        width: 18,
+        fontSize: 13,
+        fontWeight: '600',
+        textAlign: 'center',
     },
     setValue: {
-        fontSize: 13,
+        flex: 1,
+        fontSize: 16,
         fontWeight: '700',
-        marginTop: 2,
+    },
+    setWeight: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '700',
     },
 });

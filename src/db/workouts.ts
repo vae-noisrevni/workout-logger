@@ -93,6 +93,31 @@ function getWorkoutSets(workoutExerciseId: number): WorkoutSet[] {
 
 // ─── Запись ────────────────────────────────────────────────────────
 
+function insertExercises(
+    db: ReturnType<typeof getDatabase>,
+    workoutId: number,
+    exercises: CreateWorkoutInput['exercises']
+): void {
+    exercises.forEach((ex, exIndex) => {
+        const weResult = db.runSync(
+            `INSERT INTO workout_exercises
+                (workout_id, exercise_id, sort_order)
+             VALUES (?, ?, ?)`,
+            [workoutId, ex.exercise_id, exIndex]
+        );
+        const workoutExerciseId = weResult.lastInsertRowId;
+
+        ex.sets.forEach((set, setIndex) => {
+            db.runSync(
+                `INSERT INTO workout_sets
+                    (workout_exercise_id, reps, weight, sort_order)
+                 VALUES (?, ?, ?, ?)`,
+                [workoutExerciseId, set.reps, set.weight, setIndex]
+            );
+        });
+    });
+}
+
 export function createWorkout(input: CreateWorkoutInput): number {
     const db = getDatabase();
     let workoutId = 0;
@@ -103,28 +128,24 @@ export function createWorkout(input: CreateWorkoutInput): number {
             [input.name, input.date, input.comment]
         );
         workoutId = result.lastInsertRowId;
-
-        input.exercises.forEach((ex, exIndex) => {
-            const weResult = db.runSync(
-                `INSERT INTO workout_exercises
-                    (workout_id, exercise_id, sort_order)
-                 VALUES (?, ?, ?)`,
-                [workoutId, ex.exercise_id, exIndex]
-            );
-            const workoutExerciseId = weResult.lastInsertRowId;
-
-            ex.sets.forEach((set, setIndex) => {
-                db.runSync(
-                    `INSERT INTO workout_sets
-                        (workout_exercise_id, reps, weight, sort_order)
-                     VALUES (?, ?, ?, ?)`,
-                    [workoutExerciseId, set.reps, set.weight, setIndex]
-                );
-            });
-        });
+        insertExercises(db, workoutId, input.exercises);
     });
 
     return workoutId;
+}
+
+/** Обновляет тренировку целиком: упражнения и подходы пересоздаются (ON DELETE CASCADE) */
+export function updateWorkout(id: number, input: CreateWorkoutInput): void {
+    const db = getDatabase();
+
+    db.withTransactionSync(() => {
+        db.runSync(
+            'UPDATE workouts SET name = ?, date = ?, comment = ? WHERE id = ?',
+            [input.name, input.date, input.comment, id]
+        );
+        db.runSync('DELETE FROM workout_exercises WHERE workout_id = ?', [id]);
+        insertExercises(db, id, input.exercises);
+    });
 }
 
 export function deleteWorkout(id: number): void {

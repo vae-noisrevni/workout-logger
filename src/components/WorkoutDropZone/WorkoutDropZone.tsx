@@ -1,23 +1,18 @@
 // src/components/WorkoutDropZone/WorkoutDropZone.tsx
-import type { DropZoneBounds } from '@/hooks/useDragDrop';
 import type { ThemeColors } from '@/theme/colors';
 import type { ResolvedDraftExercise } from '@/utils/resolveDraft';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useRef } from 'react';
 import {
     ScrollView,
     StyleSheet,
     Text,
     View,
-    type LayoutChangeEvent,
 } from 'react-native';
 import { WorkoutCard } from '../WorkoutCard/WorkoutCard';
 
 interface Props {
     draft: ResolvedDraftExercise[];
     colors: ThemeColors;
-    isDragActive: boolean;
-    onDropZoneLayout: (bounds: DropZoneBounds) => void;
     onCardPress: (exercise: ResolvedDraftExercise) => void;
     onCardRemove: (exerciseId: number) => void;
 }
@@ -25,50 +20,11 @@ interface Props {
 export function WorkoutDropZone({
     draft,
     colors,
-    isDragActive,
-    onDropZoneLayout,
     onCardPress,
     onCardRemove,
 }: Props) {
-    const containerRef = useRef<View>(null);
-
-    const handleLayout = useCallback(
-        (_: LayoutChangeEvent) => {
-            // measureInWindow даёт абсолютные координаты в системе экрана —
-            // именно они совпадают с absoluteX/absoluteY из gesture-handler.
-            containerRef.current?.measureInWindow((x, y, width, height) => {
-                onDropZoneLayout({ x, y, width, height });
-            });
-        },
-        [onDropZoneLayout]
-    );
-
     return (
-        <View
-            ref={containerRef}
-            onLayout={handleLayout}
-            style={[
-                styles.container,
-                {
-                    backgroundColor: colors.background,
-                    borderColor: isDragActive ? colors.accent : 'transparent',
-                },
-                isDragActive && styles.containerActive,
-            ]}
-        >
-            {isDragActive && (
-                <View style={styles.hintWrap} pointerEvents="none">
-                    <Ionicons
-                        name="arrow-down-circle"
-                        size={28}
-                        color={colors.accent}
-                    />
-                    <Text style={[styles.hint, { color: colors.accent }]}>
-                        Отпусти, чтобы добавить
-                    </Text>
-                </View>
-            )}
-
+        <View style={styles.container}>
             {draft.length === 0 ? (
                 <View style={styles.empty} pointerEvents="none">
                     <Ionicons
@@ -82,15 +38,12 @@ export function WorkoutDropZone({
                             { color: colors.textSecondary },
                         ]}
                     >
-                        {isDragActive
-                            ? 'Перетащи упражнение сюда'
-                            : 'Зажми квадратик сверху и перетащи сюда,\nили просто тапни по нему'}
+                        Тапни по упражнению сверху,\nчтобы добавить его в тренировку
                     </Text>
                 </View>
             ) : (
                 <ScrollView
                     contentContainerStyle={styles.list}
-                    scrollEnabled={!isDragActive}
                     showsVerticalScrollIndicator={false}
                 >
                     {draft.map((exercise) => (
@@ -109,31 +62,7 @@ export function WorkoutDropZone({
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        marginTop: 16,
-        marginHorizontal: 16,
-        borderRadius: 18,
-        borderWidth: 2,
-        borderStyle: 'dashed',
-        overflow: 'hidden',
-    },
-    containerActive: {
-        backgroundColor: 'rgba(0, 71, 171, 0.06)',
-    },
-    hintWrap: {
-        position: 'absolute',
-        top: 12,
-        alignSelf: 'center',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        zIndex: 10,
-    },
-    hint: {
-        fontSize: 13,
-        fontWeight: '600',
-    },
+    container: { flex: 1, marginTop: 8, marginHorizontal: 16 },
     empty: {
         flex: 1,
         alignItems: 'center',
@@ -148,6 +77,7 @@ const styles = StyleSheet.create({
     },
     list: {
         padding: 12,
-        paddingTop: 44,
+        paddingTop: 4,
+        paddingBottom: 96,
     },
 });

@@ -10,28 +10,26 @@ import { SetsSheet, type SetsSheetRef } from '@/components/SetsSheet/SetsSheet';
 import { WorkoutDropZone } from '@/components/WorkoutDropZone/WorkoutDropZone';
 import { useDataVersion } from '@/context/DataVersionContext';
 import * as WorkoutRepo from '@/db/workouts';
-import { useDragDrop } from '@/hooks/useDragDrop';
 import { useExercises } from '@/hooks/useExercises';
 import { useWorkoutDraft } from '@/hooks/useWorkoutDraft';
 import { useTheme } from '@/theme/ThemeContext';
 import type { Exercise } from '@/types/exercise';
 import { resolveDraft, type ResolvedDraftExercise } from '@/utils/resolveDraft';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
     Alert,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput,
     View,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 export default function WorkoutScreen() {
     const colors = useTheme();
-    const { exercises, search, setSearch } = useExercises();
+    const { exercises } = useExercises();
+    const [search, setSearch] = useState('');
     const draft = useWorkoutDraft();
     const { bumpWorkouts } = useDataVersion();
     const sheetRef = useRef<SetsSheetRef>(null);
@@ -42,6 +40,15 @@ export default function WorkoutScreen() {
         [draft.draft, exercises],
     );
 
+    // Поиск — только по ещё не добавленным упражнениям; полный список нужен для resolveDraft
+    const availableExercises = useMemo(() => {
+        const used = new Set(draft.draft.map((d) => d.exercise_id));
+        const q = search.trim().toLowerCase();
+        return exercises.filter(
+            (e) => !used.has(e.id) && (!q || e.name.toLowerCase().includes(q)),
+        );
+    }, [exercises, draft.draft, search]);
+
     const addAndOpen = useCallback(
         (exerciseId: number) => {
             draft.addExercise(exerciseId);
@@ -49,10 +56,6 @@ export default function WorkoutScreen() {
         },
         [draft],
     );
-
-    const dnd = useDragDrop<Exercise>({
-        onDrop: (exercise) => addAndOpen(exercise.id),
-    });
 
     const handlePress = useCallback(
         (exercise: Exercise) => addAndOpen(exercise.id),
@@ -102,8 +105,6 @@ export default function WorkoutScreen() {
         [draft, bumpWorkouts],
     );
 
-    const isDragging = dnd.dragging !== null;
-
     return (
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
@@ -134,20 +135,14 @@ export default function WorkoutScreen() {
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                scrollEnabled={!isDragging}
                 contentContainerStyle={styles.squaresRow}
             >
-                {exercises.map((ex) => (
+                {availableExercises.map((ex) => (
                     <ExerciseSquare
                         key={ex.id}
                         exercise={ex}
                         colors={colors}
                         onPress={handlePress}
-                        onDragStart={dnd.startDrag}
-                        onDragMove={dnd.moveDrag}
-                        onDragEnd={dnd.endDrag}
-                        onDragCancel={dnd.cancelDrag}
-                        isBeingDragged={dnd.dragging?.id === ex.id}
                     />
                 ))}
             </ScrollView>
@@ -155,30 +150,9 @@ export default function WorkoutScreen() {
             <WorkoutDropZone
                 draft={resolvedDraft}
                 colors={colors}
-                isDragActive={isDragging}
-                onDropZoneLayout={dnd.registerDropZone}
                 onCardPress={handleCardPress}
                 onCardRemove={draft.removeExercise}
             />
-
-            {/* Призрак — рендерится поверх всего экрана, следит за пальцем через shared values */}
-            {dnd.dragging && (
-                <Animated.View
-                    pointerEvents="none"
-                    style={[styles.ghost, dnd.ghostStyle]}
-                >
-                    <View
-                        style={[
-                            styles.ghostSquare,
-                            { backgroundColor: dnd.dragging.color },
-                        ]}
-                    >
-                        <Text numberOfLines={2} style={styles.ghostLabel}>
-                            {dnd.dragging.name}
-                        </Text>
-                    </View>
-                </Animated.View>
-            )}
 
             <FinishFab
                 colors={colors}
@@ -219,27 +193,4 @@ const styles = StyleSheet.create({
     },
     searchInput: { flex: 1, fontSize: 16, paddingVertical: 0 },
     squaresRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
-    ghost: {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        zIndex: 999,
-    },
-    ghostSquare: {
-        width: 96,
-        height: 96,
-        borderRadius: 16,
-        padding: 10,
-        justifyContent: 'flex-end',
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 8,
-    },
-    ghostLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#151517',
-    },
 });

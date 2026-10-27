@@ -3,93 +3,27 @@ import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
 import type { Exercise } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface Props {
     exercise: Exercise;
     colors: ThemeColors;
     onPress: (exercise: Exercise) => void;
-    onDragStart: (exercise: Exercise, pageX: number, pageY: number) => void;
-    onDragMove: (pageX: number, pageY: number) => void;
-    onDragEnd: (pageX: number, pageY: number) => void;
-    onDragCancel: () => void;
-    isBeingDragged?: boolean;
 }
 
-export function ExerciseSquare({
-    exercise,
-    colors,
-    onPress,
-    onDragStart,
-    onDragMove,
-    onDragEnd,
-    onDragCancel,
-    isBeingDragged = false,
-}: Props) {
-    const onPressRef = useRef(onPress);
-    const onDragStartRef = useRef(onDragStart);
-    const onDragMoveRef = useRef(onDragMove);
-    const onDragEndRef = useRef(onDragEnd);
-    const onDragCancelRef = useRef(onDragCancel);
-    const exerciseRef = useRef(exercise);
-
-    // Обновляем refs после рендера — так требует Reanimated
-    useEffect(() => {
-        onPressRef.current = onPress;
-        onDragStartRef.current = onDragStart;
-        onDragMoveRef.current = onDragMove;
-        onDragEndRef.current = onDragEnd;
-        onDragCancelRef.current = onDragCancel;
-        exerciseRef.current = exercise;
-    });
-
-    const gesture = useMemo(() => {
-        const longPress = Gesture.LongPress()
-            .minDuration(250)
-            .maxDistance(8)
-            .onStart((e) => {
-                runOnJS(onDragStartRef.current)(
-                    exerciseRef.current,
-                    e.absoluteX,
-                    e.absoluteY,
-                );
-            });
-
-        const pan = Gesture.Pan()
-            .activateAfterLongPress(250)
-            .onUpdate((e) => {
-                runOnJS(onDragMoveRef.current)(e.absoluteX, e.absoluteY);
-            })
-            .onEnd((e) => {
-                runOnJS(onDragEndRef.current)(e.absoluteX, e.absoluteY);
-            })
-            .onFinalize((_e, success) => {
-                if (!success) runOnJS(onDragCancelRef.current)();
-            });
-
-        const tap = Gesture.Tap()
-            .maxDuration(250)
-            .onEnd((_e, success) => {
-                if (success) runOnJS(onPressRef.current)(exerciseRef.current);
-            });
-
-        return Gesture.Race(Gesture.Exclusive(longPress, pan), tap);
-    }, []);
-
+export function ExerciseSquare({ exercise, onPress }: Props) {
     return (
-        <GestureDetector gesture={gesture}>
-            <View
-                style={[
-                    styles.square,
-                    {
-                        backgroundColor: exercise.color,
-                        opacity: isBeingDragged ? 0.3 : 1,
-                    },
-                ]}
-            >
+        <Pressable
+            onPress={() => onPress(exercise)}
+            style={({ pressed }) => [
+                styles.square,
+                {
+                    backgroundColor: exercise.color,
+                    opacity: pressed ? 0.7 : 1,
+                },
+            ]}
+        >
+            <>
                 <View style={styles.iconWrap}>
                     <Ionicons
                         name={EXERCISE_TYPE_ICONS[exercise.type]}
@@ -100,8 +34,8 @@ export function ExerciseSquare({
                 <Text numberOfLines={2} style={styles.label}>
                     {exercise.name}
                 </Text>
-            </View>
-        </GestureDetector>
+            </>
+        </Pressable>
     );
 }
 

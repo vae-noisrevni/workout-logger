@@ -1,4 +1,5 @@
 // src/components/SetsSheet/SetsSheet.tsx
+import { NumberStepperField } from '@/components/NumberStepperField/NumberStepperField';
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
 import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
@@ -8,7 +9,7 @@ import BottomSheet, {
 } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface SetsSheetRef {
     /** Открыть sheet для упражнения по id. Объект ищется в актуальном draft. */
@@ -59,7 +60,10 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(
                 onClose={() => setOpenId(null)}
                 backgroundStyle={{ backgroundColor: colors.surfaceElevated }}
             >
-                <BottomSheetScrollView contentContainerStyle={styles.content}>
+                <BottomSheetScrollView
+                    contentContainerStyle={styles.content}
+                    keyboardShouldPersistTaps="handled"
+                >
                     <View style={styles.header}>
                         <View
                             style={[
@@ -112,77 +116,37 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(
                                         { color: colors.textSecondary },
                                     ]}
                                 >
-                                    #{index + 1}
+                                    {index + 1}
                                 </Text>
 
-                                <View style={styles.field}>
-                                    <Text
-                                        style={[
-                                            styles.fieldLabel,
-                                            { color: colors.textSecondary },
-                                        ]}
-                                    >
-                                        Повторения
-                                    </Text>
-                                    <TextInput
-                                        value={String(set.reps)}
-                                        onChangeText={(v) => {
-                                            const n = parseInt(v, 10);
-                                            if (!isNaN(n))
-                                                onUpdateSet(
-                                                    exercise.exercise_id,
-                                                    set.id,
-                                                    { reps: n },
-                                                );
-                                        }}
-                                        keyboardType="number-pad"
-                                        style={[
-                                            styles.input,
-                                            {
-                                                color: colors.textPrimary,
-                                                borderColor: colors.border,
-                                                backgroundColor:
-                                                    colors.surfaceElevated,
-                                            },
-                                        ]}
-                                    />
-                                </View>
+                                <NumberStepperField
+                                    label="Повторения"
+                                    value={set.reps}
+                                    colors={colors}
+                                    onChange={(reps) =>
+                                        onUpdateSet(
+                                            exercise.exercise_id,
+                                            set.id,
+                                            { reps },
+                                        )
+                                    }
+                                />
 
                                 {!isBodyweight && (
-                                    <View style={styles.field}>
-                                        <Text
-                                            style={[
-                                                styles.fieldLabel,
-                                                { color: colors.textSecondary },
-                                            ]}
-                                        >
-                                            Вес (кг)
-                                        </Text>
-                                        <TextInput
-                                            value={String(set.weight)}
-                                            onChangeText={(v) => {
-                                                const n = parseFloat(
-                                                    v.replace(',', '.'),
-                                                );
-                                                if (!isNaN(n))
-                                                    onUpdateSet(
-                                                        exercise.exercise_id,
-                                                        set.id,
-                                                        { weight: n },
-                                                    );
-                                            }}
-                                            keyboardType="decimal-pad"
-                                            style={[
-                                                styles.input,
-                                                {
-                                                    color: colors.textPrimary,
-                                                    borderColor: colors.border,
-                                                    backgroundColor:
-                                                        colors.surfaceElevated,
-                                                },
-                                            ]}
-                                        />
-                                    </View>
+                                    <NumberStepperField
+                                        label="Вес (кг)"
+                                        value={set.weight}
+                                        step={2.5}
+                                        decimal
+                                        colors={colors}
+                                        onChange={(weight) =>
+                                            onUpdateSet(
+                                                exercise.exercise_id,
+                                                set.id,
+                                                { weight },
+                                            )
+                                        }
+                                    />
                                 )}
 
                                 {exercise.sets.length > 1 && (
@@ -198,7 +162,7 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(
                                     >
                                         <Ionicons
                                             name="trash-outline"
-                                            size={18}
+                                            size={20}
                                             color={colors.danger}
                                         />
                                     </Pressable>
@@ -240,23 +204,19 @@ const styles = StyleSheet.create({
     setRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 10,
+        gap: 8,
         padding: 12,
         borderRadius: 12,
         borderWidth: 1,
     },
-    setIndex: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
-    field: { flex: 1, gap: 4 },
-    fieldLabel: { fontSize: 11 },
-    input: {
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
+    setIndex: {
+        width: 20,
         fontSize: 15,
+        fontWeight: '700',
         textAlign: 'center',
+        marginBottom: 14,
     },
-    removeButton: { paddingBottom: 8 },
+    removeButton: { paddingBottom: 14, paddingLeft: 2 },
     addSetButton: {
         flexDirection: 'row',
         alignItems: 'center',
