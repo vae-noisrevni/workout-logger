@@ -1,7 +1,10 @@
 // src/db/workouts.ts
 import type { ExerciseType } from '@/types/exercise';
+import { isoToInputDate } from '@/utils/date';
+import { ImportError } from '@/utils/importError';
 import type {
     CreateWorkoutInput,
+    ImportedWorkout,
     Workout,
     WorkoutExercise,
     WorkoutSet,
@@ -118,19 +121,25 @@ function insertExercises(
     });
 }
 
+// Без собственной транзакции: вложенные транзакции в SQLite не поддерживаются, importWorkouts вызывает её внутри своей
+function insertWorkout(
+    db: ReturnType<typeof getDatabase>,
+    input: CreateWorkoutInput
+): number {
+    const result = db.runSync(
+        'INSERT INTO workouts (name, date, comment) VALUES (?, ?, ?)',
+        [input.name, input.date, input.comment]
+    );
+    insertExercises(db, result.lastInsertRowId, input.exercises);
+    return result.lastInsertRowId;
+}
+
 export function createWorkout(input: CreateWorkoutInput): number {
     const db = getDatabase();
     let workoutId = 0;
-
     db.withTransactionSync(() => {
-        const result = db.runSync(
-            'INSERT INTO workouts (name, date, comment) VALUES (?, ?, ?)',
-            [input.name, input.date, input.comment]
-        );
-        workoutId = result.lastInsertRowId;
-        insertExercises(db, workoutId, input.exercises);
+        workoutId = insertWorkout(db, input);
     });
-
     return workoutId;
 }
 
@@ -151,4 +160,71 @@ export function updateWorkout(id: number, input: CreateWorkoutInput): void {
 export function deleteWorkout(id: number): void {
     const db = getDatabase();
     db.runSync('DELETE FROM workouts WHERE id = ?', [id]);
+}
+
+export interface ImportResult {
+    added: number;
+    skipped: number;
+}
+
+const workoutKey = (date: string, name: string): string =>
+    `${isoToInputDate(date)}|${name.trim().toLowerCase()}`;
+
+/**
+ * Импорт тренировок. Упражнения ищутся в справочнике по названию (без учёта регистра);
+ * если хоть одного нет — ничего не пишем. Тренировки, у которых совпали день и название
+ * с уже имеющимися в истории, пропускаются.
+ */
+export function importWorkouts(items: ImportedWorkout[]): ImportResult {
+    const db = getDatabase();
+
+    const idByName = new Map<string, number>();
+    for (const e of db.getAllSync<{ id: number; name: string }>(
+        'SELECT id, name FROM exercises ORDER BY id DESC'
+    )) {
+        idByName.set(e.name.trim().toLowerCase(), e.id);
+    }
+
+    const unknown = new Set<string>();
+    for (const w of items) {
+        for (const ex of w.exercises) {
+            if (!idByName.has(ex.name.toLowerCase())) unknown.add(ex.name);
+        }
+    }
+    if (unknown.size > 0) {
+        throw new ImportError(
+            `В справочнике нет упражнений: ${[...unknown].join(', ')}. ` +
+                'Сначала импортируй или создай их.'
+        );
+    }
+
+    const existing = new Set(
+        db
+            .getAllSync<{ name: string; date: string }>(
+                'SELECT name, date FROM workouts'
+            )
+            .map((w) => workoutKey(w.date, w.name))
+    );
+
+    let added = 0;
+    let skipped = 0;
+    db.withTransactionSync(() => {
+        for (const w of items) {
+            if (existing.has(workoutKey(w.date, w.name))) {
+                skipped++;
+                continue;
+            }
+            insertWorkout(db, {
+                name: w.name,
+                date: w.date,
+                comment: w.comment,
+                exercises: w.exercises.map((ex) => ({
+                    exercise_id: idByName.get(ex.name.toLowerCase())!,
+                    sets: ex.sets,
+                })),
+            });
+            added++;
+        }
+    });
+    return { added, skipped };
 }

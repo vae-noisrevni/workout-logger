@@ -49,3 +49,15 @@ export interface CreateWorkoutInput {
         sets: Array<{ reps: number; weight: number }>;
     }>;
 }
+
+// ─── Распарсенная тренировка из файла импорта ──────────────────────
+// Упражнения заданы названием: id в файле нет, сопоставление идёт со справочником
+export interface ImportedWorkout {
+    name: string;
+    date: string; // ISO
+    comment: string;
+    exercises: Array<{
+        name: string;
+        sets: Array<{ reps: number; weight: number }>;
+    }>;
+}

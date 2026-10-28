@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workout-logger.local/schemas/exercises.schema.json",
+  "title": "Workout Logger — справочник упражнений",
+  "type": "object",
+  "required": ["exercises"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Версия формата. Необязательна при импорте."
+    },
+    "exercises": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/exercise" }
+    }
+  },
+  "$defs": {
+    "exercise": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Название. По нему упражнения сопоставляются с историей тренировок (без учёта регистра)."
+        },
+        "type": {
+          "enum": ["weighted", "assisted", "bodyweight"],
+          "default": "weighted",
+          "description": "weighted — с отягощением, assisted — с облегчением (гравитрон), bodyweight — свой вес."
+        },
+        "description": {
+          "type": "string",
+          "default": ""
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "default": "#a0d37f",
+          "description": "Цвет метки в формате #RRGGBB."
+        }
+      }
+    }
+  }
+}

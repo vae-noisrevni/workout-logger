@@ -1,5 +1,7 @@
 // src/app/_layout.tsx
+import { DialogProvider } from '@/components/ConfirmDialog/DialogProvider';
 import { DataVersionProvider } from '@/context/DataVersionContext';
+import { WorkoutDraftProvider } from '@/context/WorkoutDraftContext';
 import { WorkoutsVersionProvider } from '@/context/WorkoutsVersionContext';
 import { initializeDatabase } from '@/db/init';
 import { ThemeProvider } from '@/theme/ThemeContext';
@@ -56,7 +58,13 @@ export default function RootLayout() {
                 <ThemeProvider>
                     <DataVersionProvider>
                         <WorkoutsVersionProvider>
-                            <Stack screenOptions={{ headerShown: false }} />
+                            <DialogProvider>
+                                <WorkoutDraftProvider>
+                                    <Stack
+                                        screenOptions={{ headerShown: false }}
+                                    />
+                                </WorkoutDraftProvider>
+                            </DialogProvider>
                         </WorkoutsVersionProvider>
                     </DataVersionProvider>
                 </ThemeProvider>

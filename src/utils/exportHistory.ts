@@ -1,14 +1,9 @@
 // src/utils/exportHistory.ts
 import type { Workout } from '@/types/workouts';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import { csvCell } from './csv';
+import { shareTextFile, type TransferFormat } from './fileTransfer';
 
-export type ExportFormat = 'csv' | 'json';
-
-const csvCell = (v: string | number): string => {
-    const s = String(v);
-    return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
+export type ExportFormat = TransferFormat;
 
 /** Одна строка CSV = один подход */
 export function workoutsToCsv(workouts: Workout[]): string {
@@ -49,7 +44,6 @@ export function workoutsToCsv(workouts: Workout[]): string {
 
 export function workoutsToJson(workouts: Workout[]): string {
     const data = workouts.map((w) => ({
-        id: w.id,
         name: w.name,
         date: w.date,
         comment: w.comment,
@@ -59,7 +53,7 @@ export function workoutsToJson(workouts: Workout[]): string {
             sets: ex.sets.map((s) => ({ reps: s.reps, weight: s.weight })),
         })),
     }));
-    return JSON.stringify(data, null, 2);
+    return JSON.stringify({ version: 1, workouts: data }, null, 2);
 }
 
 /** Пишет файл в кэш и открывает системное меню «Поделиться / Сохранить» */
@@ -68,19 +62,10 @@ export async function exportHistory(
     format: ExportFormat
 ): Promise<void> {
     const stamp = new Date().toISOString().slice(0, 10);
-    const file = new File(Paths.cache, `workout-history-${stamp}.${format}`);
-    if (file.exists) file.delete();
-    file.create();
-    file.write(
-        format === 'csv' ? workoutsToCsv(workouts) : workoutsToJson(workouts)
+    await shareTextFile(
+        `workout-history-${stamp}.${format}`,
+        format === 'csv' ? workoutsToCsv(workouts) : workoutsToJson(workouts),
+        format,
+        'Экспорт истории тренировок'
     );
-
-    if (!(await Sharing.isAvailableAsync())) {
-        throw new Error('Отправка файлов недоступна на этом устройстве');
-    }
-    await Sharing.shareAsync(file.uri, {
-        mimeType: format === 'csv' ? 'text/csv' : 'application/json',
-        UTI: format === 'csv' ? 'public.comma-separated-values-text' : 'public.json',
-        dialogTitle: 'Экспорт истории тренировок',
-    });
 }

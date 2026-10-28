@@ -22,13 +22,27 @@ export function getExercisesBySearch(query: string): Exercise[] {
     );
 }
 
-export function createExercise(input: CreateExerciseInput): number {
-    const db = getDatabase();
+function insertExercise(
+    db: ReturnType<typeof getDatabase>,
+    input: CreateExerciseInput,
+): number {
     const result = db.runSync(
         'INSERT INTO exercises (name, type, description, color) VALUES (?, ?, ?, ?)',
         [input.name, input.type, input.description, input.color],
     );
     return result.lastInsertRowId;
+}
+
+export function createExercise(input: CreateExerciseInput): number {
+    return insertExercise(getDatabase(), input);
+}
+
+/** Добавляет все упражнения одной транзакцией; дубли по названию не проверяются */
+export function createExercises(inputs: CreateExerciseInput[]): void {
+    const db = getDatabase();
+    db.withTransactionSync(() => {
+        for (const input of inputs) insertExercise(db, input);
+    });
 }
 
 export function updateExercise(input: UpdateExerciseInput): void {

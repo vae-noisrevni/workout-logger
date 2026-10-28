@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "workouts": [
+    {
+      "name": "День груди",
+      "date": "2026-10-01",
+      "comment": "Хорошее самочувствие",
+      "exercises": [
+        { "name": "Жим лёжа", "sets": [ { "reps": 10, "weight": 80 }, { "reps": 8, "weight": 85 } ] },
+        { "name": "Отжимания", "sets": [ { "reps": 20, "weight": 0 } ] }
+      ]
+    }
+  ]
+}
