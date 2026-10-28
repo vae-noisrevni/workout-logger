@@ -75,6 +75,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
       <BottomSheet
         ref={sheetRef}
         snapPoints={["70%", "90%"]}
+        index={-1}
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.surfaceElevated }}
       >
