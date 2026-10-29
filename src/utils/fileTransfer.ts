@@ -37,8 +37,36 @@ export async function shareTextFile(
 }
 
 /**
+ * Определяет формат: по расширению, затем по MIME, затем по содержимому.
+ * На Android content:// провайдеры часто отдают имя без расширения (или «.json.txt»),
+ * а MIME у .csv/.json разный у разных провайдеров — поэтому одного признака мало.
+ */
+function detectFormat(name: string, mime: string, text: string): TransferFormat | null {
+    const lowerName = name.toLowerCase();
+    if (/\.json(\.txt)?$/.test(lowerName)) return 'json';
+    if (/\.csv(\.txt)?$/.test(lowerName)) return 'csv';
+
+    const lowerMime = mime.toLowerCase();
+    if (lowerMime.includes('json')) return 'json';
+    if (lowerMime.includes('csv') || lowerMime.includes('comma-separated')) return 'csv';
+
+    const trimmed = text.trimStart();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+            JSON.parse(trimmed);
+            return 'json';
+        } catch {
+            // не JSON — пробуем дальше как CSV
+        }
+    }
+    // Похоже на таблицу: в первой строке есть разделитель
+    const firstLine = trimmed.split(/\r?\n/, 1)[0] ?? '';
+    if (firstLine.includes(',') || firstLine.includes(';')) return 'csv';
+    return null;
+}
+
+/**
  * Открывает системный выбор файла и читает его как текст.
- * Формат определяем по расширению: MIME у .csv/.json разные у разных файловых провайдеров.
  * Возвращает null, если пользователь закрыл выбор.
  */
 export async function pickTextFile(): Promise<{
@@ -48,9 +76,12 @@ export async function pickTextFile(): Promise<{
     const picked = await File.pickFileAsync({ mimeTypes: '*/*' });
     if (picked.canceled) return null;
 
-    const ext = picked.result.name.split('.').pop()?.toLowerCase();
-    if (ext !== 'csv' && ext !== 'json') {
+    const file = picked.result;
+    // BOM (часто от Windows-редакторов) ломает JSON.parse и имя первой колонки CSV
+    const text = (await file.text()).replace(/^\uFEFF/, '');
+    const format = detectFormat(file.name ?? '', file.type ?? '', text);
+    if (!format) {
         throw new ImportError('Поддерживаются только файлы .csv и .json');
     }
-    return { text: await picked.result.text(), format: ext };
+    return { text, format };
 }
