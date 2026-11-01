@@ -11,6 +11,7 @@ export interface SetEntry {
 export interface DraftExercise {
     exercise_id: number;
     sets: SetEntry[];
+    comment?: string; // необязателен: черновики старых версий его не содержат
 }
 
 // ─── Сохранённая тренировка (из БД) ────────────────────────────────
@@ -27,6 +28,7 @@ export interface WorkoutExercise {
     name: string;
     type: ExerciseType;
     color: string;
+    comment: string;
     sort_order: number;
     sets: WorkoutSet[];
 }
@@ -46,6 +48,7 @@ export interface CreateWorkoutInput {
     comment: string;
     exercises: Array<{
         exercise_id: number;
+        comment: string;
         sets: Array<{ reps: number; weight: number }>;
     }>;
 }
@@ -58,6 +61,7 @@ export interface ImportedWorkout {
     comment: string;
     exercises: Array<{
         name: string;
+        comment: string;
         sets: Array<{ reps: number; weight: number }>;
     }>;
 }

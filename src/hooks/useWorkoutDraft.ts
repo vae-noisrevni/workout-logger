@@ -133,6 +133,7 @@ export function useWorkoutDraft() {
         setDraft(
             workout.exercises.map((ex) => ({
                 exercise_id: ex.exercise_id,
+                comment: ex.comment,
                 sets: ex.sets.map((s) => ({
                     id: String(s.id),
                     reps: s.reps,

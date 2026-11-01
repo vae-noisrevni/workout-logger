@@ -6,20 +6,35 @@ import type {
 } from '@/types/exercise';
 import { getDatabase } from './init';
 
+interface ExerciseRow extends Omit<Exercise, 'favorite'> {
+    favorite: number;
+}
+
+const COLUMNS = 'id, name, type, description, color, favorite';
+// Избранные наверху, внутри групп — по алфавиту
+const ORDER = 'ORDER BY favorite DESC, name COLLATE NOCASE';
+
+const toExercise = (row: ExerciseRow): Exercise => ({
+    ...row,
+    favorite: row.favorite === 1,
+});
+
 export function getAllExercises(): Exercise[] {
     const db = getDatabase();
-    return db.getAllSync<Exercise>(
-        'SELECT id, name, type, description, color FROM exercises ORDER BY name',
-    );
+    return db
+        .getAllSync<ExerciseRow>(`SELECT ${COLUMNS} FROM exercises ${ORDER}`)
+        .map(toExercise);
 }
 
 export function getExercisesBySearch(query: string): Exercise[] {
     const db = getDatabase();
     const q = `%${query}%`;
-    return db.getAllSync<Exercise>(
-        'SELECT id, name, type, description, color FROM exercises WHERE name LIKE ? ORDER BY name',
-        [q],
-    );
+    return db
+        .getAllSync<ExerciseRow>(
+            `SELECT ${COLUMNS} FROM exercises WHERE name LIKE ? ${ORDER}`,
+            [q],
+        )
+        .map(toExercise);
 }
 
 function insertExercise(
@@ -27,8 +42,14 @@ function insertExercise(
     input: CreateExerciseInput,
 ): number {
     const result = db.runSync(
-        'INSERT INTO exercises (name, type, description, color) VALUES (?, ?, ?, ?)',
-        [input.name, input.type, input.description, input.color],
+        'INSERT INTO exercises (name, type, description, color, favorite) VALUES (?, ?, ?, ?, ?)',
+        [
+            input.name,
+            input.type,
+            input.description,
+            input.color,
+            input.favorite ? 1 : 0,
+        ],
     );
     return result.lastInsertRowId;
 }
@@ -47,19 +68,21 @@ export function createExercises(inputs: CreateExerciseInput[]): void {
 
 export function updateExercise(input: UpdateExerciseInput): void {
     const db = getDatabase();
-    const existing = db.getFirstSync<Exercise>(
-        'SELECT id, name, type, description, color FROM exercises WHERE id = ?',
+    const row = db.getFirstSync<ExerciseRow>(
+        `SELECT ${COLUMNS} FROM exercises WHERE id = ?`,
         [input.id],
     );
+    const existing = row ? toExercise(row) : null;
     if (!existing) throw new Error(`Exercise ${input.id} not found`);
 
     db.runSync(
-        'UPDATE exercises SET name = ?, type = ?, description = ?, color = ? WHERE id = ?',
+        'UPDATE exercises SET name = ?, type = ?, description = ?, color = ?, favorite = ? WHERE id = ?',
         [
             input.name ?? existing.name,
             input.type ?? existing.type,
             input.description ?? existing.description,
             input.color ?? existing.color,
+            (input.favorite ?? existing.favorite) ? 1 : 0,
             input.id,
         ],
     );

@@ -12,7 +12,11 @@ export interface Exercise {
     type: ExerciseType;
     description: string;
     color: string; // hex
+    favorite: boolean;
 }
 
-export type CreateExerciseInput = Omit<Exercise, 'id'>;
+// favorite необязателен: старые файлы импорта и форма создания его могут не задавать
+export type CreateExerciseInput = Omit<Exercise, 'id' | 'favorite'> & {
+    favorite?: boolean;
+};
 export type UpdateExerciseInput = Partial<CreateExerciseInput> & { id: number };

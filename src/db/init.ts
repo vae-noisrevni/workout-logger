@@ -26,6 +26,7 @@ export async function initializeDatabase(): Promise<void> {
       type TEXT NOT NULL CHECK(type IN ('weighted', 'assisted', 'bodyweight')),
       description TEXT DEFAULT '',
       color TEXT NOT NULL DEFAULT '#a0d37f',
+      favorite INTEGER NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -41,6 +42,7 @@ export async function initializeDatabase(): Promise<void> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       workout_id INTEGER NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
       exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+      comment TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0
     );
 
@@ -55,6 +57,31 @@ export async function initializeDatabase(): Promise<void> {
 
     await migrateExercisesColor();
     await migrateWorkoutsComment();
+    await addColumnIfMissing(
+        'exercises',
+        'favorite',
+        'INTEGER NOT NULL DEFAULT 0'
+    );
+    await addColumnIfMissing(
+        'workout_exercises',
+        'comment',
+        "TEXT NOT NULL DEFAULT ''"
+    );
+}
+
+async function addColumnIfMissing(
+    table: string,
+    column: string,
+    definition: string
+): Promise<void> {
+    const db = dbInstance!;
+    const columns = await db.getAllAsync<{ name: string }>(
+        `PRAGMA table_info(${table})`
+    );
+    if (columns.some((c) => c.name === column)) return;
+    await db.execAsync(
+        `ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`
+    );
 }
 
 async function migrateExercisesColor(): Promise<void> {

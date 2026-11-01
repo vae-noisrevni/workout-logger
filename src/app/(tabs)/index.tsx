@@ -89,6 +89,7 @@ export default function WorkoutScreen() {
                     comment: data.comment,
                     exercises: draft.draft.map((d) => ({
                         exercise_id: d.exercise_id,
+                        comment: (d.comment ?? '').trim(),
                         sets: d.sets.map((s) => ({
                             reps: s.reps,
                             weight: s.weight,

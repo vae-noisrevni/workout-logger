@@ -62,7 +62,11 @@ function toWorkout(
                 }
                 return { reps, weight };
             });
-            exercises.push({ name: exName, sets });
+            exercises.push({
+                name: exName,
+                comment: typeof ex.comment === 'string' ? ex.comment.trim() : '',
+                sets,
+            });
         });
     }
 

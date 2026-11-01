@@ -25,6 +25,7 @@ interface WorkoutExerciseRow {
     name: string;
     type: ExerciseType;
     color: string;
+    comment: string;
     sort_order: number;
 }
 
@@ -69,6 +70,7 @@ function getWorkoutExercises(workoutId: number): WorkoutExercise[] {
             e.name,
             e.type,
             e.color,
+            we.comment,
             we.sort_order
          FROM workout_exercises we
          JOIN exercises e ON e.id = we.exercise_id
@@ -104,9 +106,9 @@ function insertExercises(
     exercises.forEach((ex, exIndex) => {
         const weResult = db.runSync(
             `INSERT INTO workout_exercises
-                (workout_id, exercise_id, sort_order)
-             VALUES (?, ?, ?)`,
-            [workoutId, ex.exercise_id, exIndex]
+                (workout_id, exercise_id, comment, sort_order)
+             VALUES (?, ?, ?, ?)`,
+            [workoutId, ex.exercise_id, ex.comment, exIndex]
         );
         const workoutExerciseId = weResult.lastInsertRowId;
 
@@ -155,6 +157,27 @@ export function updateWorkout(id: number, input: CreateWorkoutInput): void {
         db.runSync('DELETE FROM workout_exercises WHERE workout_id = ?', [id]);
         insertExercises(db, id, input.exercises);
     });
+}
+
+/**
+ * Последний непустой комментарий к упражнению из истории (по дате тренировки).
+ * excludeWorkoutId — редактируемая тренировка, её собственный коммент подсказкой не считаем.
+ */
+export function getLastExerciseComment(
+    exerciseId: number,
+    excludeWorkoutId?: number
+): string | null {
+    const db = getDatabase();
+    const row = db.getFirstSync<{ comment: string }>(
+        `SELECT we.comment
+         FROM workout_exercises we
+         JOIN workouts w ON w.id = we.workout_id
+         WHERE we.exercise_id = ? AND we.comment <> '' AND w.id <> ?
+         ORDER BY w.date DESC, w.id DESC
+         LIMIT 1`,
+        [exerciseId, excludeWorkoutId ?? -1]
+    );
+    return row?.comment ?? null;
 }
 
 export function deleteWorkout(id: number): void {
@@ -220,6 +243,7 @@ export function importWorkouts(items: ImportedWorkout[]): ImportResult {
                 comment: w.comment,
                 exercises: w.exercises.map((ex) => ({
                     exercise_id: idByName.get(ex.name.toLowerCase())!,
+                    comment: ex.comment,
                     sets: ex.sets,
                 })),
             });
