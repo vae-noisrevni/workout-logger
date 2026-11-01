@@ -86,13 +86,17 @@ export function useWorkoutDraft() {
         setDraft((prev) => prev.filter((d) => d.exercise_id !== exerciseId));
     }, []);
 
+    // Новый подход — копия последнего: обычно следующий подход делают с тем же весом
     const addSet = useCallback((exerciseId: number) => {
         setDraft((prev) =>
-            prev.map((d) =>
-                d.exercise_id === exerciseId
-                    ? { ...d, sets: [...d.sets, createEmptySet()] }
-                    : d
-            )
+            prev.map((d) => {
+                if (d.exercise_id !== exerciseId) return d;
+                const last = d.sets[d.sets.length - 1];
+                const next: SetEntry = last
+                    ? { id: createSetId(), reps: last.reps, weight: last.weight }
+                    : createEmptySet();
+                return { ...d, sets: [...d.sets, next] };
+            })
         );
     }, []);
 
