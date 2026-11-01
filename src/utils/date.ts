@@ -54,3 +54,12 @@ export function yesterdayInputDate(): string {
     d.setDate(d.getDate() - 1);
     return isoToInputDate(d.toISOString());
 }
+
+/** ISO → «1 ноября 2026 г.» */
+export function formatLongDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+}

@@ -5,6 +5,7 @@ import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
 import * as WorkoutRepo from '@/db/workouts';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useTheme } from '@/theme/ThemeContext';
+import { formatLongDate } from '@/utils/date';
 import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
 import { pickTextFile } from '@/utils/fileTransfer';
 import { parseWorkouts } from '@/utils/importHistory';
@@ -15,13 +16,6 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import type { Workout } from '@/types/workouts';
-
-const formatDate = (iso: string): string =>
-    new Date(iso).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
 
 export default function HistoryScreen() {
     const colors = useTheme();
@@ -85,38 +79,12 @@ export default function HistoryScreen() {
         }
     }, [dialog, bumpWorkouts]);
 
-    const openInEditor = useCallback(
-        (workout: Workout) => {
-            draft.loadWorkout(workout);
-            router.navigate('/');
-        },
-        [draft],
-    );
-
-    const handleWorkoutPress = useCallback(
-        (workout: Workout) => {
-            const hasCurrent = draft.draft.length > 0 || draft.editing !== null;
-            if (!hasCurrent) {
-                openInEditor(workout);
-                return;
-            }
-            dialog.show({
-                title: 'Заменить текущую тренировку?',
-                message: draft.editing
-                    ? 'Сейчас редактируется другая тренировка. Несохранённые изменения будут потеряны.'
-                    : 'На экране тренировки уже есть несохранённые упражнения. Они будут заменены выбранной тренировкой из истории.',
-                buttons: [
-                    { text: 'Оставить текущую', style: 'cancel' },
-                    {
-                        text: 'Заменить',
-                        style: 'destructive',
-                        onPress: () => openInEditor(workout),
-                    },
-                ],
-            });
-        },
-        [draft.draft.length, draft.editing, dialog, openInEditor],
-    );
+    const handleWorkoutPress = useCallback((workout: Workout) => {
+        router.push({
+            pathname: '/workout/[id]',
+            params: { id: String(workout.id) },
+        });
+    }, []);
 
     const handleDelete = useCallback(
         (workout: Workout) => {
@@ -258,13 +226,13 @@ export default function HistoryScreen() {
                                     {item.name}
                                 </Text>
                                 <Ionicons
-                                    name="create-outline"
+                                    name="chevron-forward"
                                     size={20}
                                     color={colors.textSecondary}
                                 />
                             </View>
                             <Text style={{ color: colors.textSecondary }}>
-                                {formatDate(item.date)} · {item.exercises.length}{' '}
+                                {formatLongDate(item.date)} · {item.exercises.length}{' '}
                                 упр. · {setsCount} подх.
                             </Text>
                             <View style={styles.dots}>
