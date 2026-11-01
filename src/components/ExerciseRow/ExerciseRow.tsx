@@ -13,9 +13,16 @@ interface Props {
     colors: ThemeColors;
     onPress: () => void;
     onDelete: () => void;
+    onToggleFavorite: () => void;
 }
 
-export function ExerciseRow({ exercise, colors, onPress, onDelete }: Props) {
+export function ExerciseRow({
+    exercise,
+    colors,
+    onPress,
+    onDelete,
+    onToggleFavorite,
+}: Props) {
     const swipeRef = useRef<Swipeable>(null);
 
     const renderRightActions = () => (
@@ -103,6 +110,27 @@ export function ExerciseRow({ exercise, colors, onPress, onDelete }: Props) {
                     </View>
                 </View>
 
+                <Pressable
+                    onPress={onToggleFavorite}
+                    hitSlop={10}
+                    style={styles.star}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                        exercise.favorite
+                            ? 'Убрать из избранного'
+                            : 'Добавить в избранное'
+                    }
+                >
+                    <Ionicons
+                        name={exercise.favorite ? 'star' : 'star-outline'}
+                        size={22}
+                        color={
+                            exercise.favorite
+                                ? colors.accent
+                                : colors.textSecondary
+                        }
+                    />
+                </Pressable>
                 <Ionicons
                     name="chevron-forward"
                     size={20}
@@ -135,6 +163,7 @@ const styles = StyleSheet.create({
     },
     typeText: { fontSize: 11, fontWeight: '500' },
     description: { flex: 1, fontSize: 13 },
+    star: { paddingHorizontal: 8, paddingVertical: 4 },
     deleteAction: {
         width: 80,
         justifyContent: 'center',

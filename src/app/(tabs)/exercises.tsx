@@ -195,6 +195,12 @@ export default function ExercisesScreen() {
                             colors={colors}
                             onPress={() => openEdit(item)}
                             onDelete={() => remove(item.id)}
+                            onToggleFavorite={() =>
+                                update({
+                                    id: item.id,
+                                    favorite: !item.favorite,
+                                })
+                            }
                         />
                     )}
                 />

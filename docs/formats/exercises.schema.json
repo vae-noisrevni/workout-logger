@@ -41,6 +41,11 @@
           "pattern": "^#[0-9a-fA-F]{6}$",
           "default": "#a0d37f",
           "description": "Цвет метки в формате #RRGGBB."
+        },
+        "favorite": {
+          "type": "boolean",
+          "default": false,
+          "description": "Избранное: такие упражнения показываются в статистике и стоят первыми в списках."
         }
       }
     }

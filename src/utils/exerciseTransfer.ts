@@ -16,9 +16,11 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export function exercisesToCsv(exercises: Exercise[]): string {
     const rows = [
-        'name,type,description,color',
+        'name,type,description,color,favorite',
         ...exercises.map((e) =>
-            [e.name, e.type, e.description, e.color].map(csvCell).join(','),
+            [e.name, e.type, e.description, e.color, e.favorite ? 1 : 0]
+                .map(csvCell)
+                .join(','),
         ),
     ];
     // BOM, чтобы Excel корректно открыл кириллицу
@@ -31,6 +33,7 @@ export function exercisesToJson(exercises: Exercise[]): string {
         type: e.type,
         description: e.description,
         color: e.color,
+        favorite: e.favorite,
     }));
     return JSON.stringify({ version: 1, exercises: data }, null, 2);
 }
@@ -51,6 +54,17 @@ export async function exportExercises(
 // ─── Импорт ────────────────────────────────────────────────────────
 
 type RawExercise = Record<string, unknown>;
+
+/** Необязательное поле: отсутствует/пусто → false; null — нераспознанное значение */
+function parseFavorite(value: unknown): boolean | null {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1 ? true : value === 0 ? false : null;
+    const s = String(value).trim().toLowerCase();
+    if (s === '' || s === '0' || s === 'false') return false;
+    if (s === '1' || s === 'true') return true;
+    return null;
+}
 
 function toExercise(
     raw: RawExercise,
@@ -83,8 +97,15 @@ function toExercise(
         return null;
     }
 
+    const favorite = parseFavorite(raw.favorite);
+    if (favorite === null) {
+        errors.push(`${where}: favorite должно быть true/false или 1/0`);
+        return null;
+    }
+
     return {
         name,
+        favorite,
         type: typeRaw as ExerciseType,
         description:
             typeof raw.description === 'string' ? raw.description.trim() : '',

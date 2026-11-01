@@ -1,4 +1,4 @@
-name,type,description,color
-Жим лёжа,weighted,"Штанга, горизонтальная скамья",#e77d7e
-Подтягивания в гравитроне,assisted,,#66baec
-Отжимания,bodyweight,,
+name,type,description,color,favorite
+Жим лёжа,weighted,"Штанга, горизонтальная скамья",#e77d7e,1
+Подтягивания в гравитроне,assisted,,#66baec,0
+Отжимания,bodyweight,,,0

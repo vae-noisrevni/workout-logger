@@ -1,7 +1,7 @@
 {
   "version": 1,
   "exercises": [
-    { "name": "Жим лёжа", "type": "weighted", "description": "Штанга, горизонтальная скамья", "color": "#e77d7e" },
+    { "name": "Жим лёжа", "type": "weighted", "description": "Штанга, горизонтальная скамья", "color": "#e77d7e", "favorite": true },
     { "name": "Подтягивания в гравитроне", "type": "assisted", "description": "", "color": "#66baec" },
     { "name": "Отжимания", "type": "bodyweight" }
   ]
