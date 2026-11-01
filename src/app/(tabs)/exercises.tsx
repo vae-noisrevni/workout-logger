@@ -11,8 +11,8 @@ import { pickTextFile, type TransferFormat } from '@/utils/fileTransfer';
 import BottomSheet from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
+import { FlatList } from 'react-native-gesture-handler';
 import {
-    FlatList,
     Pressable,
     StyleSheet,
     Text,

@@ -6,9 +6,8 @@ import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Swipeable, {
-    type SwipeableMethods,
-} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 interface Props {
     exercise: Exercise;
@@ -27,24 +26,15 @@ export function ExerciseRow({
 }: Props) {
     const swipeRef = useRef<SwipeableMethods>(null);
 
-    const renderRightActions = () => (
-        <Pressable
-            onPress={() => {
+    return (
+        <SwipeToDelete
+            ref={swipeRef}
+            radius={12}
+            containerStyle={styles.container}
+            onDelete={() => {
                 swipeRef.current?.close();
                 onDelete();
             }}
-            style={[styles.deleteAction, { backgroundColor: colors.danger }]}
-        >
-            <Ionicons name="trash-outline" size={22} color="#fff" />
-        </Pressable>
-    );
-
-    return (
-        <Swipeable
-            ref={swipeRef}
-            renderRightActions={renderRightActions}
-            overshootRight={false}
-            rightThreshold={40}
         >
             <Pressable
                 onPress={onPress}
@@ -139,17 +129,18 @@ export function ExerciseRow({
                     color={colors.textSecondary}
                 />
             </Pressable>
-        </Swipeable>
+        </SwipeToDelete>
     );
 }
 
 const styles = StyleSheet.create({
+    container: { marginBottom: 8 },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingRight: 12,
         borderRadius: 12,
         borderWidth: 1,
-        marginBottom: 8,
         overflow: 'hidden',
     },
     colorBar: { width: 5, alignSelf: 'stretch' },
@@ -165,13 +156,5 @@ const styles = StyleSheet.create({
     },
     typeText: { fontSize: 11, fontWeight: '500' },
     description: { flex: 1, fontSize: 13 },
-    star: { paddingHorizontal: 8, paddingVertical: 4 },
-    deleteAction: {
-        width: 80,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-        borderRadius: 12,
-        marginLeft: 8,
-    },
+    star: { paddingHorizontal: 8, paddingVertical: 4, marginRight: 4 },
 });

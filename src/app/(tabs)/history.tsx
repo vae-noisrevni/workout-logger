@@ -12,10 +12,10 @@ import { parseWorkouts } from '@/utils/importHistory';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import Swipeable, {
-    type SwipeableMethods,
-} from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList } from 'react-native-gesture-handler';
+import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import type { Workout } from '@/types/workouts';
 
@@ -186,27 +186,12 @@ export default function HistoryScreen() {
                         0,
                     );
                     return (
-                        <Swipeable
+                        <SwipeToDelete
                             ref={(r) => {
                                 swipeRefs.current[item.id] = r;
                             }}
-                            renderRightActions={() => (
-                                <Pressable
-                                    onPress={() => handleDelete(item)}
-                                    style={[
-                                        styles.deleteAction,
-                                        { backgroundColor: colors.danger },
-                                    ]}
-                                >
-                                    <Ionicons
-                                        name="trash-outline"
-                                        size={22}
-                                        color="#fff"
-                                    />
-                                </Pressable>
-                            )}
-                            overshootRight={false}
-                            rightThreshold={40}
+                            radius={14}
+                            onDelete={() => handleDelete(item)}
                         >
                         <Pressable
                             onPress={() => handleWorkoutPress(item)}
@@ -250,7 +235,7 @@ export default function HistoryScreen() {
                                 ))}
                             </View>
                         </Pressable>
-                        </Swipeable>
+                        </SwipeToDelete>
                     );
                 }}
             />
@@ -277,13 +262,6 @@ const styles = StyleSheet.create({
     card: { padding: 14, borderRadius: 14, borderWidth: 1, gap: 6 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     name: { flex: 1, fontSize: 16, fontWeight: '600' },
-    deleteAction: {
-        width: 80,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 14,
-        marginLeft: 8,
-    },
     dots: { flexDirection: 'row', gap: 6, marginTop: 2 },
     dot: { width: 10, height: 10, borderRadius: 5 },
 });
