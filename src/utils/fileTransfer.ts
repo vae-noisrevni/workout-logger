@@ -24,7 +24,7 @@ export async function shareTextFile(
     const file = new File(Paths.cache, fileName);
     if (file.exists) file.delete();
     file.create();
-    file.write(content);
+    file.writeSync(content);
 
     if (!(await Sharing.isAvailableAsync())) {
         throw new Error('Отправка файлов недоступна на этом устройстве');

@@ -6,7 +6,9 @@ import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Swipeable, {
+    type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 interface Props {
     exercise: Exercise;
@@ -23,7 +25,7 @@ export function ExerciseRow({
     onDelete,
     onToggleFavorite,
 }: Props) {
-    const swipeRef = useRef<Swipeable>(null);
+    const swipeRef = useRef<SwipeableMethods>(null);
 
     const renderRightActions = () => (
         <Pressable

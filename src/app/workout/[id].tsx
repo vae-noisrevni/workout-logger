@@ -76,6 +76,7 @@ export default function WorkoutPreviewScreen() {
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
+        headerTransparent: false,
     };
 
     if (!workout || !summary) {

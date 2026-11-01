@@ -2,7 +2,7 @@
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
 import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
 import type { Workout } from '@/types/workouts';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 
 /**
@@ -12,6 +12,7 @@ import { useCallback } from 'react';
 export function useOpenWorkoutInEditor(): (workout: Workout) => void {
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
+    const router = useRouter();
 
     const open = useCallback(
         (workout: Workout) => {
@@ -19,7 +20,7 @@ export function useOpenWorkoutInEditor(): (workout: Workout) => void {
             // navigate разворачивает стек до табов, а не пушит новый экран
             router.navigate('/');
         },
-        [draft],
+        [draft, router],
     );
 
     return useCallback(
@@ -49,6 +50,6 @@ export function useOpenWorkoutInEditor(): (workout: Workout) => void {
                 ],
             });
         },
-        [draft.draft.length, draft.editing, dialog, open],
+        [draft.draft.length, draft.editing, dialog, open, router],
     );
 }

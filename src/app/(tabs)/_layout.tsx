@@ -6,6 +6,9 @@ import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
   const colors = useTheme();
+  // RN 0.88: color из tabBarIcon типизирован как ColorValue (может быть number), Ionicons ждёт строку
+  const iconColor = (focused: boolean) =>
+    focused ? colors.accent : colors.textSecondary;
 
   return (
     <Tabs
@@ -26,8 +29,8 @@ export default function TabsLayout() {
         options={{
           title: "Тренировка",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="barbell-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name="barbell-outline" size={size} color={iconColor(focused)} />
           ),
         }}
       />
@@ -36,8 +39,8 @@ export default function TabsLayout() {
         options={{
           title: "Упражнения",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name="list-outline" size={size} color={iconColor(focused)} />
           ),
         }}
       />
@@ -46,8 +49,8 @@ export default function TabsLayout() {
         options={{
           title: "История",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name="time-outline" size={size} color={iconColor(focused)} />
           ),
         }}
       />
@@ -56,8 +59,8 @@ export default function TabsLayout() {
         options={{
           title: "Статистика",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons name="stats-chart-outline" size={size} color={iconColor(focused)} />
           ),
         }}
       />

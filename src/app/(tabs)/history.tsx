@@ -10,10 +10,12 @@ import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
 import { pickTextFile } from '@/utils/fileTransfer';
 import { parseWorkouts } from '@/utils/importHistory';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Swipeable, {
+    type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import type { Workout } from '@/types/workouts';
 
@@ -22,9 +24,10 @@ export default function HistoryScreen() {
     const { workouts, remove } = useWorkouts();
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
+    const router = useRouter();
     const { bumpWorkouts } = useDataVersion();
     // Открытая свайпом карточка — чтобы закрыть её, если пользователь отменил удаление
-    const swipeRefs = useRef<Record<number, Swipeable | null>>({});
+    const swipeRefs = useRef<Record<number, SwipeableMethods | null>>({});
 
     const handleExport = useCallback(
         async (format: ExportFormat) => {
@@ -84,7 +87,7 @@ export default function HistoryScreen() {
             pathname: '/workout/[id]',
             params: { id: String(workout.id) },
         });
-    }, []);
+    }, [router]);
 
     const handleDelete = useCallback(
         (workout: Workout) => {
