@@ -1,13 +1,18 @@
 // src/app/workout/[id].tsx — просмотр тренировки из истории (только чтение)
+import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
 import { useDataVersion } from '@/context/DataVersionContext';
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import * as WorkoutRepo from '@/db/workouts';
 import { useOpenWorkoutInEditor } from '@/hooks/useOpenWorkoutInEditor';
 import { useTheme } from '@/theme/ThemeContext';
 import { formatLongDate } from '@/utils/date';
+import {
+    exportWorkout,
+    type SingleWorkoutExportFormat,
+} from '@/utils/exportHistory';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function WorkoutPreviewScreen() {
@@ -15,6 +20,7 @@ export default function WorkoutPreviewScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { workoutsRevision } = useDataVersion();
     const openInEditor = useOpenWorkoutInEditor();
+    const dialog = useDialog();
 
     const workout = useMemo(() => {
         // Ревизия меняется при любой записи тренировок — перечитываем после правки/удаления
@@ -34,6 +40,34 @@ export default function WorkoutPreviewScreen() {
         }
         return { sets, tonnage: Math.round(tonnage) };
     }, [workout]);
+
+    const handleExportPress = useCallback(() => {
+        if (!workout) return;
+        const run = async (format: SingleWorkoutExportFormat) => {
+            try {
+                await exportWorkout(workout, format);
+            } catch (e) {
+                dialog.show({
+                    title: 'Ошибка',
+                    message:
+                        e instanceof Error
+                            ? e.message
+                            : 'Не удалось экспортировать',
+                });
+            }
+        };
+        dialog.show({
+            title: 'Экспорт тренировки',
+            message:
+                'Текст — чтобы отправить в мессенджер. CSV и JSON можно импортировать обратно.',
+            buttons: [
+                { text: 'Текст', onPress: () => run('text') },
+                { text: 'CSV', onPress: () => run('csv') },
+                { text: 'JSON', onPress: () => run('json') },
+                { text: 'Отмена', style: 'cancel' },
+            ],
+        });
+    }, [workout, dialog]);
 
     const headerOptions = {
         headerShown: true,
@@ -69,18 +103,32 @@ export default function WorkoutPreviewScreen() {
                 options={{
                     ...headerOptions,
                     headerRight: () => (
-                        <Pressable
-                            onPress={() => openInEditor(workout)}
-                            hitSlop={10}
-                            accessibilityRole="button"
-                            accessibilityLabel="Редактировать"
-                        >
-                            <Ionicons
-                                name="create-outline"
-                                size={24}
-                                color={colors.textPrimary}
-                            />
-                        </Pressable>
+                        <View style={styles.headerActions}>
+                            <Pressable
+                                onPress={handleExportPress}
+                                hitSlop={10}
+                                accessibilityRole="button"
+                                accessibilityLabel="Экспорт"
+                            >
+                                <Ionicons
+                                    name="share-outline"
+                                    size={24}
+                                    color={colors.textPrimary}
+                                />
+                            </Pressable>
+                            <Pressable
+                                onPress={() => openInEditor(workout)}
+                                hitSlop={10}
+                                accessibilityRole="button"
+                                accessibilityLabel="Редактировать"
+                            >
+                                <Ionicons
+                                    name="create-outline"
+                                    size={24}
+                                    color={colors.textPrimary}
+                                />
+                            </Pressable>
+                        </View>
                     ),
                 }}
             />
@@ -235,6 +283,7 @@ export default function WorkoutPreviewScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 20 },
     center: { alignItems: 'center', justifyContent: 'center', padding: 24 },
     content: { padding: 16, gap: 10, paddingBottom: 40 },
     meta: { gap: 4, marginBottom: 6 },
