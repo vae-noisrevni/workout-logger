@@ -8,8 +8,14 @@ import BottomSheet, {
     BottomSheetScrollView,
 } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+    forwardRef,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export interface SetsSheetRef {
     /** Открыть sheet для упражнения по id. Объект ищется в актуальном draft. */
@@ -27,10 +33,24 @@ interface Props {
         patch: { reps?: number; weight?: number },
     ) => void;
     onRemoveSet: (exerciseId: number, setId: string) => void;
+    onChangeComment: (exerciseId: number, comment: string) => void;
+    /** Коммент к этому упражнению с прошлой тренировки — показывается подсказкой */
+    getCommentHint: (exerciseId: number) => string | null;
 }
 
 export const SetsSheet = forwardRef<SetsSheetRef, Props>(
-    ({ colors, draft, onAddSet, onUpdateSet, onRemoveSet }, ref) => {
+    (
+        {
+            colors,
+            draft,
+            onAddSet,
+            onUpdateSet,
+            onRemoveSet,
+            onChangeComment,
+            getCommentHint,
+        },
+        ref,
+    ) => {
         const sheetRef = useRef<BottomSheet>(null);
         const [openId, setOpenId] = useState<number | null>(null);
 
@@ -46,6 +66,12 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(
             openId !== null
                 ? (draft.find((d) => d.exercise_id === openId) ?? null)
                 : null;
+
+        // Запрос в БД один раз на открытие, а не на каждое нажатие клавиши в комменте
+        const commentHint = useMemo(
+            () => (openId !== null ? getCommentHint(openId) : null),
+            [openId, getCommentHint],
+        );
 
         if (!exercise) return null;
 
@@ -185,6 +211,44 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(
                             Добавить подход
                         </Text>
                     </Pressable>
+
+                    <View style={styles.commentBlock}>
+                        <Text
+                            style={[
+                                styles.commentLabel,
+                                { color: colors.textSecondary },
+                            ]}
+                        >
+                            Комментарий к упражнению
+                        </Text>
+                        {commentHint ? (
+                            <Text
+                                style={[
+                                    styles.commentHint,
+                                    { color: colors.textSecondary },
+                                ]}
+                            >
+                                В прошлый раз: {commentHint}
+                            </Text>
+                        ) : null}
+                        <TextInput
+                            value={exercise.comment ?? ''}
+                            onChangeText={(text) =>
+                                onChangeComment(exercise.exercise_id, text)
+                            }
+                            placeholder="Техника, самочувствие, что поменять в следующий раз"
+                            placeholderTextColor={colors.textSecondary}
+                            multiline
+                            style={[
+                                styles.commentInput,
+                                {
+                                    color: colors.textPrimary,
+                                    borderColor: colors.border,
+                                    backgroundColor: colors.surface,
+                                },
+                            ]}
+                        />
+                    </View>
                 </BottomSheetScrollView>
             </BottomSheet>
         );
@@ -217,6 +281,17 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     removeButton: { paddingBottom: 14, paddingLeft: 2 },
+    commentBlock: { gap: 6 },
+    commentLabel: { fontSize: 13 },
+    commentHint: { fontSize: 13, fontStyle: 'italic' },
+    commentInput: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 15,
+        minHeight: 64,
+        textAlignVertical: 'top',
+    },
     addSetButton: {
         flexDirection: 'row',
         alignItems: 'center',

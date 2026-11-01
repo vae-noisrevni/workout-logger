@@ -121,7 +121,10 @@ export function parseWorkouts(
 
         // Одна строка = один подход. Тренировка определяется парой (date, workout),
         // упражнение — названием внутри неё; порядок берётся из порядка строк.
-        const workouts = new Map<string, Raw & { exercises: Map<string, Raw[]> }>();
+        const workouts = new Map<
+            string,
+            Raw & { exercises: Map<string, { comment: string; sets: Raw[] }> }
+        >();
         rows.slice(1).forEach((cells) => {
             const row: Record<string, string> = {};
             header.forEach((h, idx) => (row[h] = (cells[idx] ?? '').trim()));
@@ -137,9 +140,11 @@ export function parseWorkouts(
                 };
                 workouts.set(key, w);
             }
-            const sets = w.exercises.get(row.exercise) ?? [];
-            sets.push({ reps: row.reps, weight: row.weight_kg });
-            w.exercises.set(row.exercise, sets);
+            const ex = w.exercises.get(row.exercise) ?? { comment: '', sets: [] };
+            ex.sets.push({ reps: row.reps, weight: row.weight_kg });
+            // Коммент упражнения повторяется в каждой строке подхода — берём первый непустой
+            if (!ex.comment && row.exercise_comment) ex.comment = row.exercise_comment;
+            w.exercises.set(row.exercise, ex);
         });
 
         let i = 0;
@@ -148,9 +153,10 @@ export function parseWorkouts(
             const w2 = toWorkout(
                 {
                     ...w,
-                    exercises: [...w.exercises].map(([name, sets]) => ({
+                    exercises: [...w.exercises].map(([name, ex]) => ({
                         name,
-                        sets,
+                        comment: ex.comment,
+                        sets: ex.sets,
                     })),
                 },
                 `Тренировка ${i} («${w.name}», ${w.date})`,

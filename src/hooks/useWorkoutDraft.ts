@@ -132,6 +132,14 @@ export function useWorkoutDraft() {
         );
     }, []);
 
+    const setComment = useCallback((exerciseId: number, comment: string) => {
+        setDraft((prev) =>
+            prev.map((d) =>
+                d.exercise_id === exerciseId ? { ...d, comment } : d
+            )
+        );
+    }, []);
+
     // Заменяет текущий черновик тренировкой из истории и включает режим редактирования
     const loadWorkout = useCallback((workout: Workout) => {
         setDraft(
@@ -168,6 +176,7 @@ export function useWorkoutDraft() {
         addSet,
         updateSet,
         removeSet,
+        setComment,
         reset,
     };
 }

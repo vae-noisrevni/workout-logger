@@ -53,6 +53,11 @@
           "enum": ["weighted", "assisted", "bodyweight"],
           "description": "Только для информации; при импорте игнорируется."
         },
+        "comment": {
+          "type": "string",
+          "default": "",
+          "description": "Комментарий к упражнению в этой тренировке."
+        },
         "sets": {
           "type": "array",
           "minItems": 1,

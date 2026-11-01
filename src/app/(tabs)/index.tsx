@@ -68,6 +68,13 @@ export default function WorkoutScreen() {
         sheetRef.current?.open(exercise.exercise_id);
     }, []);
 
+    const editingId = draft.editing?.id;
+    const getCommentHint = useCallback(
+        (exerciseId: number) =>
+            WorkoutRepo.getLastExerciseComment(exerciseId, editingId),
+        [editingId],
+    );
+
     const handleFinishPress = useCallback(() => {
         if (draft.draft.length === 0) {
             dialog.show({
@@ -232,6 +239,8 @@ export default function WorkoutScreen() {
                 onAddSet={draft.addSet}
                 onUpdateSet={draft.updateSet}
                 onRemoveSet={draft.removeSet}
+                onChangeComment={draft.setComment}
+                getCommentHint={getCommentHint}
             />
 
             <FinishWorkoutSheet

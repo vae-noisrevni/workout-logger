@@ -12,6 +12,7 @@ export function workoutsToCsv(workouts: Workout[]): string {
         'workout',
         'comment',
         'exercise',
+        'exercise_comment',
         'type',
         'set',
         'reps',
@@ -27,6 +28,7 @@ export function workoutsToCsv(workouts: Workout[]): string {
                         w.name,
                         w.comment,
                         ex.name,
+                        ex.comment,
                         ex.type,
                         i + 1,
                         set.reps,
@@ -50,6 +52,7 @@ export function workoutsToJson(workouts: Workout[]): string {
         exercises: w.exercises.map((ex) => ({
             name: ex.name,
             type: ex.type,
+            comment: ex.comment,
             sets: ex.sets.map((s) => ({ reps: s.reps, weight: s.weight })),
         })),
     }));

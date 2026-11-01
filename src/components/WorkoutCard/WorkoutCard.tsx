@@ -94,6 +94,25 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                         </View>
                     ))}
                 </View>
+
+                {exercise.comment?.trim() ? (
+                    <View style={styles.commentRow}>
+                        <Ionicons
+                            name="chatbubble-outline"
+                            size={14}
+                            color={colors.textSecondary}
+                        />
+                        <Text
+                            numberOfLines={2}
+                            style={[
+                                styles.comment,
+                                { color: colors.textSecondary },
+                            ]}
+                        >
+                            {exercise.comment.trim()}
+                        </Text>
+                    </View>
+                ) : null}
             </View>
         </Pressable>
     );
@@ -129,6 +148,8 @@ const styles = StyleSheet.create({
         padding: 2,
     },
     setsList: { gap: 6 },
+    commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+    comment: { flex: 1, fontSize: 13, fontStyle: 'italic' },
     setRow: {
         flexDirection: 'row',
         alignItems: 'center',
