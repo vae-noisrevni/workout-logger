@@ -1,3 +1,9 @@
+import { usePresets } from '@/hooks/usePresets';
+import { PresetEditor } from '@/components/PresetEditor/PresetEditor';
+import { ThemeSheet } from '@/components/ThemeSheet/ThemeSheet';
+import { Action } from '@/components/ScreenControls/ScreenControls';
+import { exercisesForSave } from '@/utils/draft';
+import type { WorkoutPreset } from '@/types/presets';
 // src/app/(tabs)/index.tsx
 import { ExerciseSquare } from '@/components/ExerciseSquare/ExerciseSquare';
 import { FinishFab } from '@/components/FinishFab/FinishFab';
@@ -31,6 +37,8 @@ import {
 export default function WorkoutScreen() {
     const colors = useTheme();
     const { exercises } = useExercises();
+    const { presets, error: presetsError } = usePresets();
+    const [presetSheet, setPresetSheet] = useState<'pick' | 'create' | null>(null);
     const [search, setSearch] = useState('');
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
@@ -53,6 +61,7 @@ export default function WorkoutScreen() {
 
     const addAndOpen = useCallback(
         (exerciseId: number) => {
+            if (!draft.hydrated) return;
             draft.addExercise(exerciseId);
             sheetRef.current?.open(exerciseId);
         },
@@ -68,35 +77,41 @@ export default function WorkoutScreen() {
         sheetRef.current?.open(exercise.exercise_id);
     }, []);
 
-    const editingId = draft.editing?.id;
-    const getCommentHint = useCallback(
-        (exerciseId: number) =>
-            WorkoutRepo.getLastExerciseComment(exerciseId, editingId),
-        [editingId],
-    );
-
+    const saveableCount = resolvedDraft.filter((exercise) => exercise.sets.length > 0).length;
+    const choosePreset = (preset: WorkoutPreset) => {
+        setPresetSheet(null);
+        const load = () => draft.loadPreset(preset);
+        if (draft.draft.length || draft.editing) dialog.show({ title: 'Заменить текущую тренировку?',
+            message: 'Несохранённые изменения будут заменены упражнениями пресета.', buttons: [
+                { text: 'Оставить текущую', style: 'cancel' }, { text: 'Заменить', style: 'destructive', onPress: load },
+            ] });
+        else load();
+    };
     const handleFinishPress = useCallback(() => {
-        if (draft.draft.length === 0) {
+        if (!draft.hydrated) return;
+        if (saveableCount === 0) {
             dialog.show({
                 title: 'Пусто',
                 message:
-                    'Добавь хотя бы одно упражнение, прежде чем завершить тренировку',
+                    'Добавь хотя бы один подход, прежде чем завершить тренировку',
             });
             return;
         }
         finishRef.current?.open();
-    }, [draft.draft.length, dialog]);
+    }, [draft.hydrated, saveableCount, dialog]);
 
     const handleFinishConfirm = useCallback(
         (data: FinishWorkoutData) => {
             try {
                 const input = {
+                    preset_id: draft.origin?.preset_id ?? null,
+                    preset_name: draft.origin?.preset_name ?? null,
                     name: data.name,
                     date: data.date,
                     comment: data.comment,
-                    exercises: draft.draft.map((d) => ({
+                    exercises: exercisesForSave(resolvedDraft).map((d) => ({
                         exercise_id: d.exercise_id,
-                        comment: (d.comment ?? '').trim(),
+                        comment: d.comment ?? '',
                         sets: d.sets.map((s) => ({
                             reps: s.reps,
                             weight: s.weight,
@@ -117,15 +132,17 @@ export default function WorkoutScreen() {
                         ? 'Изменения сохранены в истории'
                         : 'Тренировка сохранена в истории',
                 });
+                return true;
             } catch (e) {
                 dialog.show({
                     title: 'Ошибка',
                     message:
                         e instanceof Error ? e.message : 'Не удалось сохранить',
                 });
+                return false;
             }
         },
-        [draft, bumpWorkouts, dialog],
+        [draft, resolvedDraft, bumpWorkouts, dialog],
     );
 
     const handleCancelEdit = useCallback(() => {
@@ -147,6 +164,14 @@ export default function WorkoutScreen() {
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
         >
+            {draft.storageError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{draft.storageError}</Text>}
+            {!draft.hydrated && draft.storageError && <Action title="Повторить загрузку черновика" onPress={draft.retryRestore} />}
+            {presetsError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{presetsError}</Text>}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 16, marginBottom: 10 }}>
+                <Action title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => setPresetSheet('pick')} />
+                <Action title="Сохранить как пресет" disabled={!draft.hydrated || !resolvedDraft.length} onPress={() => setPresetSheet('create')} />
+            </View>
+            {draft.origin && <Text style={{ color: colors.textSecondary, marginHorizontal: 16, marginBottom: 8 }}>Пресет: {draft.origin.preset_name}</Text>}
             {draft.editing && (
                 <View
                     style={[
@@ -229,24 +254,33 @@ export default function WorkoutScreen() {
             <FinishFab
                 colors={colors}
                 onPress={handleFinishPress}
-                disabled={draft.draft.length === 0}
+                disabled={!draft.hydrated || saveableCount === 0}
             />
 
             <SetsSheet
                 ref={sheetRef}
+                excludeWorkoutId={draft.editing?.id}
                 colors={colors}
                 draft={resolvedDraft}
+                onUpdateExerciseComment={draft.updateExerciseComment}
+                onReplaceSets={draft.replaceSets}
                 onAddSet={draft.addSet}
                 onUpdateSet={draft.updateSet}
                 onRemoveSet={draft.removeSet}
-                onChangeComment={draft.setComment}
-                getCommentHint={getCommentHint}
             />
 
+            {presetSheet && <ThemeSheet onClose={() => setPresetSheet(null)}>
+                {presetSheet === 'create' ? <PresetEditor initialIds={resolvedDraft.map((exercise) => exercise.exercise_id)} onSaved={() => setPresetSheet(null)} onCancel={() => setPresetSheet(null)} />
+                    : <>
+                        <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>Выбрать пресет</Text>
+                        {presets.map((preset) => <Action key={preset.id} title={preset.name} disabled={!preset.exercise_ids.length} onPress={() => choosePreset(preset)} />)}
+                        {!presets.length && <Text style={{ color: colors.textSecondary }}>Создайте пресет на вкладке «Пресеты»</Text>}
+                    </>}
+            </ThemeSheet>}
             <FinishWorkoutSheet
                 ref={finishRef}
                 colors={colors}
-                exerciseCount={draft.draft.length}
+                exerciseCount={saveableCount}
                 initial={draft.editing}
                 onConfirm={handleFinishConfirm}
             />

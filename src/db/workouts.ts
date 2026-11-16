@@ -12,6 +12,8 @@ import type {
 import { getDatabase } from './init';
 
 interface WorkoutRow {
+    preset_id: number | null;
+    preset_name: string | null;
     id: number;
     name: string;
     date: string;
@@ -19,13 +21,13 @@ interface WorkoutRow {
 }
 
 interface WorkoutExerciseRow {
+    comment: string;
     id: number;
     workout_id: number;
     exercise_id: number;
     name: string;
     type: ExerciseType;
     color: string;
-    comment: string;
     sort_order: number;
 }
 
@@ -42,7 +44,7 @@ interface WorkoutSetRow {
 export function getAllWorkouts(): Workout[] {
     const db = getDatabase();
     const workouts = db.getAllSync<WorkoutRow>(
-        'SELECT id, name, date, comment FROM workouts ORDER BY date DESC'
+        'SELECT id, name, date, comment, preset_id, preset_name FROM workouts ORDER BY date DESC'
     );
     return workouts.map((w) => ({
         ...w,
@@ -53,7 +55,7 @@ export function getAllWorkouts(): Workout[] {
 export function getWorkoutById(id: number): Workout | null {
     const db = getDatabase();
     const w = db.getFirstSync<WorkoutRow>(
-        'SELECT id, name, date, comment FROM workouts WHERE id = ?',
+        'SELECT id, name, date, comment, preset_id, preset_name FROM workouts WHERE id = ?',
         [id]
     );
     if (!w) return null;
@@ -70,8 +72,8 @@ function getWorkoutExercises(workoutId: number): WorkoutExercise[] {
             e.name,
             e.type,
             e.color,
-            we.comment,
-            we.sort_order
+            we.sort_order,
+            we.comment
          FROM workout_exercises we
          JOIN exercises e ON e.id = we.exercise_id
          WHERE we.workout_id = ?
@@ -106,9 +108,9 @@ function insertExercises(
     exercises.forEach((ex, exIndex) => {
         const weResult = db.runSync(
             `INSERT INTO workout_exercises
-                (workout_id, exercise_id, comment, sort_order)
+                (workout_id, exercise_id, sort_order, comment)
              VALUES (?, ?, ?, ?)`,
-            [workoutId, ex.exercise_id, ex.comment, exIndex]
+            [workoutId, ex.exercise_id, exIndex, ex.comment ?? '']
         );
         const workoutExerciseId = weResult.lastInsertRowId;
 
@@ -129,8 +131,8 @@ function insertWorkout(
     input: CreateWorkoutInput
 ): number {
     const result = db.runSync(
-        'INSERT INTO workouts (name, date, comment) VALUES (?, ?, ?)',
-        [input.name, input.date, input.comment]
+        'INSERT INTO workouts (name, date, comment, preset_id, preset_name) VALUES (?, ?, ?, ?, ?)',
+        [input.name, input.date, input.comment, input.preset_id ?? null, input.preset_name ?? null]
     );
     insertExercises(db, result.lastInsertRowId, input.exercises);
     return result.lastInsertRowId;
@@ -151,33 +153,12 @@ export function updateWorkout(id: number, input: CreateWorkoutInput): void {
 
     db.withTransactionSync(() => {
         db.runSync(
-            'UPDATE workouts SET name = ?, date = ?, comment = ? WHERE id = ?',
-            [input.name, input.date, input.comment, id]
+            'UPDATE workouts SET name = ?, date = ?, comment = ?, preset_id = ?, preset_name = ? WHERE id = ?',
+            [input.name, input.date, input.comment, input.preset_id ?? null, input.preset_name ?? null, id]
         );
         db.runSync('DELETE FROM workout_exercises WHERE workout_id = ?', [id]);
         insertExercises(db, id, input.exercises);
     });
-}
-
-/**
- * Последний непустой комментарий к упражнению из истории (по дате тренировки).
- * excludeWorkoutId — редактируемая тренировка, её собственный коммент подсказкой не считаем.
- */
-export function getLastExerciseComment(
-    exerciseId: number,
-    excludeWorkoutId?: number
-): string | null {
-    const db = getDatabase();
-    const row = db.getFirstSync<{ comment: string }>(
-        `SELECT we.comment
-         FROM workout_exercises we
-         JOIN workouts w ON w.id = we.workout_id
-         WHERE we.exercise_id = ? AND we.comment <> '' AND w.id <> ?
-         ORDER BY w.date DESC, w.id DESC
-         LIMIT 1`,
-        [exerciseId, excludeWorkoutId ?? -1]
-    );
-    return row?.comment ?? null;
 }
 
 export function deleteWorkout(id: number): void {

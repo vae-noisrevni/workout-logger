@@ -6,8 +6,7 @@ import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 interface Props {
     exercise: Exercise;
@@ -17,24 +16,27 @@ interface Props {
     onToggleFavorite: () => void;
 }
 
-export function ExerciseRow({
-    exercise,
-    colors,
-    onPress,
-    onDelete,
-    onToggleFavorite,
-}: Props) {
-    const swipeRef = useRef<SwipeableMethods>(null);
+export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavorite }: Props) {
+    const swipeRef = useRef<Swipeable>(null);
 
-    return (
-        <SwipeToDelete
-            ref={swipeRef}
-            radius={12}
-            containerStyle={styles.container}
-            onDelete={() => {
+    const renderRightActions = () => (
+        <Pressable
+            onPress={() => {
                 swipeRef.current?.close();
                 onDelete();
             }}
+            style={[styles.deleteAction, { backgroundColor: colors.danger }]}
+        >
+            <Ionicons name="trash-outline" size={22} color="#fff" />
+        </Pressable>
+    );
+
+    return (
+        <Swipeable
+            ref={swipeRef}
+            renderRightActions={renderRightActions}
+            overshootRight={false}
+            rightThreshold={40}
         >
             <Pressable
                 onPress={onPress}
@@ -102,26 +104,8 @@ export function ExerciseRow({
                     </View>
                 </View>
 
-                <Pressable
-                    onPress={onToggleFavorite}
-                    hitSlop={10}
-                    style={styles.star}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                        exercise.favorite
-                            ? 'Убрать из избранного'
-                            : 'Добавить в избранное'
-                    }
-                >
-                    <Ionicons
-                        name={exercise.favorite ? 'star' : 'star-outline'}
-                        size={22}
-                        color={
-                            exercise.favorite
-                                ? colors.accent
-                                : colors.textSecondary
-                        }
-                    />
+                <Pressable onPress={(event) => { event.stopPropagation(); onToggleFavorite(); }} hitSlop={10} accessibilityLabel={exercise.is_favorite ? 'Убрать из избранного' : 'Добавить в избранное'} style={{ padding: 12 }}>
+                    <Ionicons name={exercise.is_favorite ? 'star' : 'star-outline'} size={24} color={colors.accent} />
                 </Pressable>
                 <Ionicons
                     name="chevron-forward"
@@ -129,18 +113,17 @@ export function ExerciseRow({
                     color={colors.textSecondary}
                 />
             </Pressable>
-        </SwipeToDelete>
+        </Swipeable>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { marginBottom: 8 },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingRight: 12,
         borderRadius: 12,
         borderWidth: 1,
+        marginBottom: 8,
         overflow: 'hidden',
     },
     colorBar: { width: 5, alignSelf: 'stretch' },
@@ -156,5 +139,12 @@ const styles = StyleSheet.create({
     },
     typeText: { fontSize: 11, fontWeight: '500' },
     description: { flex: 1, fontSize: 13 },
-    star: { paddingHorizontal: 8, paddingVertical: 4, marginRight: 4 },
+    deleteAction: {
+        width: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+        borderRadius: 12,
+        marginLeft: 8,
+    },
 });

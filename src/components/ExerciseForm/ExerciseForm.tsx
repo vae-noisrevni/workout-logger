@@ -40,7 +40,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
         initial?.color ?? DEFAULT_EXERCISE_COLOR,
     );
 
-    const [favorite, setFavorite] = useState(initial?.favorite ?? false);
+    const [isFavorite, setIsFavorite] = useState(initial?.is_favorite ?? false);
 
     const isValid = name.trim().length > 0;
 
@@ -65,26 +65,6 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                 ]}
                 autoFocus
             />
-
-            <Pressable
-                onPress={() => setFavorite((v) => !v)}
-                style={[
-                    styles.favoriteRow,
-                    {
-                        borderColor: favorite ? colors.accent : colors.border,
-                        backgroundColor: colors.surface,
-                    },
-                ]}
-            >
-                <Ionicons
-                    name={favorite ? 'star' : 'star-outline'}
-                    size={20}
-                    color={favorite ? colors.accent : colors.textSecondary}
-                />
-                <Text style={{ color: colors.textPrimary, flex: 1 }}>
-                    Избранное — показывать в статистике
-                </Text>
-            </Pressable>
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>
                 Тип
@@ -182,6 +162,10 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                 ]}
             />
 
+            <Pressable onPress={() => setIsFavorite(!isFavorite)} accessibilityRole="checkbox" accessibilityState={{ checked: isFavorite }} style={styles.typeRow}>
+                <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={24} color={colors.accent} />
+                <Text style={{ color: colors.textPrimary }}>Избранное</Text>
+            </Pressable>
             <View style={styles.actions}>
                 <Pressable
                     onPress={onCancel}
@@ -204,7 +188,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                             type,
                             description: description.trim(),
                             color,
-                            favorite,
+                            is_favorite: isFavorite,
                         })
                     }
                     disabled={!isValid}
@@ -234,14 +218,6 @@ const styles = StyleSheet.create({
     label: { fontSize: 13, marginTop: 8, marginBottom: 4 },
     input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
     textarea: { minHeight: 80, textAlignVertical: 'top' },
-    favoriteRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 14,
-    },
     typeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     typeChip: {
         paddingHorizontal: 14,

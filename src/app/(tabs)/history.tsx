@@ -5,29 +5,32 @@ import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
 import * as WorkoutRepo from '@/db/workouts';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useTheme } from '@/theme/ThemeContext';
-import { formatLongDate } from '@/utils/date';
 import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
 import { pickTextFile } from '@/utils/fileTransfer';
 import { parseWorkouts } from '@/utils/importHistory';
+import { formatWorkoutDate } from '@/utils/date';
+import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useCallback, useRef } from 'react';
-import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FlatList } from 'react-native-gesture-handler';
-import { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import type { Workout } from '@/types/workouts';
 
 export default function HistoryScreen() {
     const colors = useTheme();
     const { workouts, remove } = useWorkouts();
+    const [search, setSearch] = useState('');
+    const results = useMemo(
+        () => searchWorkoutHistory(workouts, search),
+        [workouts, search],
+    );
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
-    const router = useRouter();
     const { bumpWorkouts } = useDataVersion();
     // Открытая свайпом карточка — чтобы закрыть её, если пользователь отменил удаление
-    const swipeRefs = useRef<Record<number, SwipeableMethods | null>>({});
+    const swipeRefs = useRef<Record<number, Swipeable | null>>({});
 
     const handleExport = useCallback(
         async (format: ExportFormat) => {
@@ -82,12 +85,39 @@ export default function HistoryScreen() {
         }
     }, [dialog, bumpWorkouts]);
 
-    const handleWorkoutPress = useCallback((workout: Workout) => {
-        router.push({
-            pathname: '/workout/[id]',
-            params: { id: String(workout.id) },
-        });
-    }, [router]);
+    const openInEditor = useCallback(
+        (workout: Workout) => {
+            draft.loadWorkout(workout);
+            router.navigate('/');
+        },
+        [draft],
+    );
+
+    const handleWorkoutPress = useCallback(
+        (workout: Workout) => {
+            if (!draft.hydrated) return;
+            const hasCurrent = draft.draft.length > 0 || draft.editing !== null;
+            if (!hasCurrent) {
+                openInEditor(workout);
+                return;
+            }
+            dialog.show({
+                title: 'Заменить текущую тренировку?',
+                message: draft.editing
+                    ? 'Сейчас редактируется другая тренировка. Несохранённые изменения будут потеряны.'
+                    : 'На экране тренировки уже есть несохранённые упражнения. Они будут заменены выбранной тренировкой из истории.',
+                buttons: [
+                    { text: 'Оставить текущую', style: 'cancel' },
+                    {
+                        text: 'Заменить',
+                        style: 'destructive',
+                        onPress: () => openInEditor(workout),
+                    },
+                ],
+            });
+        },
+        [draft.hydrated, draft.draft.length, draft.editing, dialog, openInEditor],
+    );
 
     const handleDelete = useCallback(
         (workout: Workout) => {
@@ -119,15 +149,40 @@ export default function HistoryScreen() {
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
         >
+            <View style={[
+                styles.searchRow,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}>
+                <Ionicons name="search" size={20} color={colors.textSecondary} />
+                <TextInput
+                    value={search}
+                    onChangeText={setSearch}
+                    placeholder="Поиск по упражнению..."
+                    accessibilityLabel="Поиск по упражнению в истории"
+                    placeholderTextColor={colors.textSecondary}
+                    autoCorrect={false}
+                    style={[styles.searchInput, { color: colors.textPrimary }]}
+                />
+                {search.length > 0 && (
+                    <Pressable
+                        onPress={() => setSearch('')}
+                        accessibilityLabel="Очистить поиск"
+                        hitSlop={10}
+                    >
+                        <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
+                    </Pressable>
+                )}
+            </View>
             <FlatList
-                data={workouts}
-                keyExtractor={(w) => String(w.id)}
+                data={results}
+                keyExtractor={({ workout }) => String(workout.id)}
+                keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={
                     <Text
                         style={[styles.empty, { color: colors.textSecondary }]}
                     >
-                        История пока пуста
+                        {workouts.length === 0 ? 'История пока пуста' : 'Ничего не найдено'}
                     </Text>
                 }
                 ListHeaderComponent={
@@ -180,18 +235,33 @@ export default function HistoryScreen() {
                         </Pressable>
                     </View>
                 }
-                renderItem={({ item }) => {
+                renderItem={({ item: { workout: item, matchingNames } }) => {
                     const setsCount = item.exercises.reduce(
                         (sum, ex) => sum + ex.sets.length,
                         0,
                     );
                     return (
-                        <SwipeToDelete
+                        <Swipeable
                             ref={(r) => {
                                 swipeRefs.current[item.id] = r;
                             }}
-                            radius={14}
-                            onDelete={() => handleDelete(item)}
+                            renderRightActions={() => (
+                                <Pressable
+                                    onPress={() => handleDelete(item)}
+                                    style={[
+                                        styles.deleteAction,
+                                        { backgroundColor: colors.danger },
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name="trash-outline"
+                                        size={22}
+                                        color="#fff"
+                                    />
+                                </Pressable>
+                            )}
+                            overshootRight={false}
+                            rightThreshold={40}
                         >
                         <Pressable
                             onPress={() => handleWorkoutPress(item)}
@@ -214,15 +284,21 @@ export default function HistoryScreen() {
                                     {item.name}
                                 </Text>
                                 <Ionicons
-                                    name="chevron-forward"
+                                    name="create-outline"
                                     size={20}
                                     color={colors.textSecondary}
                                 />
                             </View>
                             <Text style={{ color: colors.textSecondary }}>
-                                {formatLongDate(item.date)} · {item.exercises.length}{' '}
+                                {formatWorkoutDate(item.date)} · {item.exercises.length}{' '}
                                 упр. · {setsCount} подх.
                             </Text>
+                            {matchingNames.length > 0 && (
+                                <Text style={{ color: colors.textPrimary }}>
+                                    {matchingNames.join(', ')}
+                                </Text>
+                            )}
+                            {item.preset_name && <Text style={{ color: colors.textSecondary }}>Пресет: {item.preset_name}</Text>}
                             <View style={styles.dots}>
                                 {item.exercises.map((ex) => (
                                     <View
@@ -235,7 +311,7 @@ export default function HistoryScreen() {
                                 ))}
                             </View>
                         </Pressable>
-                        </SwipeToDelete>
+                        </Swipeable>
                     );
                 }}
             />
@@ -245,6 +321,18 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    searchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginHorizontal: 16,
+        marginTop: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    searchInput: { flex: 1, fontSize: 16, paddingVertical: 0 },
     center: { alignItems: 'center', justifyContent: 'center' },
     list: { padding: 16, gap: 10 },
     transferRow: { flexDirection: 'row', gap: 10, marginBottom: 6 },
@@ -262,6 +350,13 @@ const styles = StyleSheet.create({
     card: { padding: 14, borderRadius: 14, borderWidth: 1, gap: 6 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     name: { flex: 1, fontSize: 16, fontWeight: '600' },
+    deleteAction: {
+        width: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 14,
+        marginLeft: 8,
+    },
     dots: { flexDirection: 'row', gap: 6, marginTop: 2 },
     dot: { width: 10, height: 10, borderRadius: 5 },
 });

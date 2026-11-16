@@ -1,4 +1,4 @@
-name,type,description,color,favorite
-Жим лёжа,weighted,"Штанга, горизонтальная скамья",#e77d7e,1
-Подтягивания в гравитроне,assisted,,#66baec,0
-Отжимания,bodyweight,,,0
+name,type,description,color,favorite,weight_unit
+Жим лёжа,weighted,"Штанга, горизонтальная скамья",#e77d7e,true,kg
+Подтягивания в гравитроне,assisted,,#66baec,false,kg
+Отжимания,bodyweight,,,false,kg

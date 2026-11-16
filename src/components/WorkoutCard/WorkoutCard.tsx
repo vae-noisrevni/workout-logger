@@ -1,3 +1,4 @@
+import { displayNumber } from '@/utils/stats';
 // src/components/WorkoutCard/WorkoutCard.tsx
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
@@ -52,6 +53,8 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                     </Pressable>
                 </View>
 
+                {!!exercise.comment && <Text style={{ color: colors.textSecondary }}>{exercise.comment}</Text>}
+                {!exercise.sets.length && <Text style={{ color: colors.textSecondary }}>Добавьте первый подход</Text>}
                 <View style={styles.setsList}>
                     {exercise.sets.map((set, index) => (
                         <View key={set.id} style={styles.setRow}>
@@ -82,7 +85,7 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                                         { color: colors.textPrimary },
                                     ]}
                                 >
-                                    {set.weight}
+                                    {displayNumber(set.weight)}
                                     <Text
                                         style={{ color: colors.textSecondary }}
                                     >

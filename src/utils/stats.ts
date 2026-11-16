@@ -1,124 +1,56 @@
-// src/utils/stats.ts — расчёты для таба «Статистика» (без обращения к БД)
-import type { Exercise, ExerciseType } from '@/types/exercise';
-import type { Workout } from '@/types/workouts';
+import type { ExerciseType } from '@/types/exercise';
 
-export interface MonthRef {
-    year: number;
-    month: number; // 0–11
+export interface SetLike { reps: number; weight: number }
+export interface StatSetRow extends SetLike { workout_id: number; date: string; exercise_id: number }
+export interface MonthCount { month: string; count: number }
+export const displayNumber = (value: number) => String(Math.round(value * 100) / 100);
+export const setValue = (type: ExerciseType, set: SetLike) => type === 'bodyweight' ? set.reps : set.weight;
+export const isBetter = (type: ExerciseType, a: number, b: number) => type === 'assisted' ? a < b : a > b;
+export const valueUnit = (type: ExerciseType) => type === 'bodyweight' ? 'повт.' : 'кг';
+
+export function bestSet(type: ExerciseType, sets: SetLike[]): SetLike | null {
+    return sets.reduce<SetLike | null>((best, set) => {
+        if (!best || isBetter(type, setValue(type, set), setValue(type, best)) ||
+            (setValue(type, set) === setValue(type, best) && set.reps > best.reps)) return set;
+        return best;
+    }, null);
 }
-
-export function monthOf(date: Date): MonthRef {
-    return { year: date.getFullYear(), month: date.getMonth() };
+export function bestValue(type: ExerciseType, sets: SetLike[]): number | null {
+    const best = bestSet(type, sets);
+    return best ? setValue(type, best) : null;
 }
-
-export function previousMonth({ year, month }: MonthRef): MonthRef {
-    return month === 0
-        ? { year: year - 1, month: 11 }
-        : { year, month: month - 1 };
+export function monthKey(iso: string): string {
+    const date = new Date(iso);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
-
-// Дата хранится в ISO (UTC); месяц считаем по часовому поясу устройства, как и в остальном UI
-function isInMonth(iso: string, ref: MonthRef): boolean {
-    const d = new Date(iso);
-    return d.getFullYear() === ref.year && d.getMonth() === ref.month;
-}
-
-export function countWorkoutsInMonth(
-    workouts: Workout[],
-    ref: MonthRef,
-): number {
-    return workouts.filter((w) => isInMonth(w.date, ref)).length;
-}
-
-/** Что считается результатом: для весовых — вес, для остальных — повторы */
-export type StatMetric = 'weight' | 'reps';
-
-export function metricFor(type: ExerciseType): StatMetric {
-    return type === 'weighted' ? 'weight' : 'reps';
-}
-
-export interface BestSet {
-    value: number; // вес или повторы — по metric
-    reps: number;
-    weight: number;
-    date: string; // ISO тренировки
-}
-
-// Для веса при равенстве лучше больше повторов; для повторов при равенстве — меньше помощи/веса не важен
-function isBetter(
-    metric: StatMetric,
-    candidate: BestSet,
-    current: BestSet | null,
-): boolean {
-    if (!current) return true;
-    if (candidate.value !== current.value)
-        return candidate.value > current.value;
-    if (metric === 'weight') return candidate.reps > current.reps;
-    return false;
-}
-
-function bestSet(
-    workouts: Workout[],
-    exerciseId: number,
-    metric: StatMetric,
-    filter?: (w: Workout) => boolean,
-): BestSet | null {
-    let best: BestSet | null = null;
-    for (const w of workouts) {
-        if (filter && !filter(w)) continue;
-        for (const ex of w.exercises) {
-            if (ex.exercise_id !== exerciseId) continue;
-            for (const s of ex.sets) {
-                const candidate: BestSet = {
-                    value: metric === 'weight' ? s.weight : s.reps,
-                    reps: s.reps,
-                    weight: s.weight,
-                    date: w.date,
-                };
-                if (isBetter(metric, candidate, best)) best = candidate;
-            }
-        }
+export function exerciseProgress(type: ExerciseType, rows: StatSetRow[]) {
+    const grouped = new Map<string, SetLike[]>();
+    for (const row of rows) {
+        const key = monthKey(row.date);
+        const group = grouped.get(key) ?? [];
+        group.push(row);
+        grouped.set(key, group);
     }
-    return best;
+    const values = [...grouped].sort(([a], [b]) => a.localeCompare(b))
+        .map(([month, sets]) => ({ month, value: bestValue(type, sets)! }));
+    const latest = values.at(-1) ?? null;
+    const previous = values.at(-2) ?? null;
+    const diff = latest && previous ? latest.value - previous.value : null;
+    return { best: bestValue(type, rows), latest, previous, diff,
+        improved: diff === null || diff === 0 ? null : isBetter(type, latest!.value, previous!.value) };
 }
-
-export interface FavoriteStat {
-    exercise: Exercise;
-    metric: StatMetric;
-    allTime: BestSet | null;
-    thisMonth: BestSet | null;
-    lastMonth: BestSet | null;
-    /** thisMonth − lastMonth; null, если в одном из месяцев упражнения не было */
-    delta: number | null;
-}
-
-export function favoriteStats(
-    workouts: Workout[],
-    favorites: Exercise[],
-    current: MonthRef,
-): FavoriteStat[] {
-    const prev = previousMonth(current);
-    return favorites.map((exercise) => {
-        const metric = metricFor(exercise.type);
-        const thisMonth = bestSet(workouts, exercise.id, metric, (w) =>
-            isInMonth(w.date, current),
-        );
-        const lastMonth = bestSet(workouts, exercise.id, metric, (w) =>
-            isInMonth(w.date, prev),
-        );
-        return {
-            exercise,
-            metric,
-            allTime: bestSet(workouts, exercise.id, metric),
-            thisMonth,
-            lastMonth,
-            delta:
-                thisMonth && lastMonth
-                    ? round1(thisMonth.value - lastMonth.value)
-                    : null,
-        };
+export function workoutsPerMonth(dates: string[], now: Date, months = 12): MonthCount[] {
+    const counts = new Map<string, number>();
+    for (const date of dates) {
+        const key = monthKey(date);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from({ length: months }, (_, index) => {
+        const month = monthKey(new Date(now.getFullYear(), now.getMonth() - months + index + 1, 1).toISOString());
+        return { month, count: counts.get(month) ?? 0 };
     });
 }
-
-// Веса бывают дробными (2.5 кг шаг) — убираем хвосты вида 0.30000000000000004
-const round1 = (n: number): number => Math.round(n * 10) / 10;
+export function exerciseVolume(type: ExerciseType, sets: SetLike[]): number {
+    return sets.reduce((sum, set) => sum + (type === 'weighted' ? set.weight * set.reps : set.reps), 0);
+}
+export const activityColor = (count: number) => count >= 8 ? '#2e7d32' : count >= 5 ? '#ef6c00' : '#c62828';

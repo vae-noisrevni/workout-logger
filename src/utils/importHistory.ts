@@ -62,11 +62,7 @@ function toWorkout(
                 }
                 return { reps, weight };
             });
-            exercises.push({
-                name: exName,
-                comment: typeof ex.comment === 'string' ? ex.comment.trim() : '',
-                sets,
-            });
+            exercises.push({ name: exName, comment: typeof ex.comment === 'string' ? ex.comment : '', sets });
         });
     }
 
@@ -121,13 +117,10 @@ export function parseWorkouts(
 
         // Одна строка = один подход. Тренировка определяется парой (date, workout),
         // упражнение — названием внутри неё; порядок берётся из порядка строк.
-        const workouts = new Map<
-            string,
-            Raw & { exercises: Map<string, { comment: string; sets: Raw[] }> }
-        >();
+        const workouts = new Map<string, Raw & { exercises: Map<string, { comment: string; sets: Raw[] }> }>();
         rows.slice(1).forEach((cells) => {
             const row: Record<string, string> = {};
-            header.forEach((h, idx) => (row[h] = (cells[idx] ?? '').trim()));
+            header.forEach((h, idx) => (row[h] = ['comment', 'exercise_comment'].includes(h) ? (cells[idx] ?? '') : (cells[idx] ?? '').trim()));
 
             const key = `${row.date}\u0000${row.workout}`;
             let w = workouts.get(key);
@@ -140,11 +133,14 @@ export function parseWorkouts(
                 };
                 workouts.set(key, w);
             }
-            const ex = w.exercises.get(row.exercise) ?? { comment: '', sets: [] };
-            ex.sets.push({ reps: row.reps, weight: row.weight_kg });
-            // Коммент упражнения повторяется в каждой строке подхода — берём первый непустой
-            if (!ex.comment && row.exercise_comment) ex.comment = row.exercise_comment;
-            w.exercises.set(row.exercise, ex);
+            const exercise = w.exercises.get(row.exercise) ?? { comment: '', sets: [] };
+            const comment = row.exercise_comment ?? '';
+            if (comment && exercise.comment && comment !== exercise.comment) {
+                errors.push(`Упражнение «${row.exercise}»: разные exercise_comment в одной тренировке`);
+            }
+            if (comment) exercise.comment = comment;
+            exercise.sets.push({ reps: row.reps, weight: row.weight_kg });
+            w.exercises.set(row.exercise, exercise);
         });
 
         let i = 0;
@@ -153,10 +149,10 @@ export function parseWorkouts(
             const w2 = toWorkout(
                 {
                     ...w,
-                    exercises: [...w.exercises].map(([name, ex]) => ({
+                    exercises: [...w.exercises].map(([name, exercise]) => ({
                         name,
-                        comment: ex.comment,
-                        sets: ex.sets,
+                        comment: exercise.comment,
+                        sets: exercise.sets,
                     })),
                 },
                 `Тренировка ${i} («${w.name}», ${w.date})`,

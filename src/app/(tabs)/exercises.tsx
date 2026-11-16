@@ -11,8 +11,8 @@ import { pickTextFile, type TransferFormat } from '@/utils/fileTransfer';
 import BottomSheet from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList } from 'react-native-gesture-handler';
 import {
+    FlatList,
     Pressable,
     StyleSheet,
     Text,
@@ -36,6 +36,7 @@ export default function ExercisesScreen() {
         create,
         update,
         remove,
+        toggleFavorite,
     } = useExercises();
     const dialog = useDialog();
     const { bumpExercises } = useDataVersion();
@@ -195,12 +196,7 @@ export default function ExercisesScreen() {
                             colors={colors}
                             onPress={() => openEdit(item)}
                             onDelete={() => remove(item.id)}
-                            onToggleFavorite={() =>
-                                update({
-                                    id: item.id,
-                                    favorite: !item.favorite,
-                                })
-                            }
+                            onToggleFavorite={() => toggleFavorite(item)}
                         />
                     )}
                 />
@@ -236,7 +232,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 16,
-        paddingTop: 60,
+        paddingTop: 12,
     },
     transferRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
     transferBtn: {

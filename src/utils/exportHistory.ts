@@ -1,8 +1,6 @@
 // src/utils/exportHistory.ts
-import type { Workout, WorkoutExercise } from '@/types/workouts';
-import { Share } from 'react-native';
+import type { Workout } from '@/types/workouts';
 import { csvCell } from './csv';
-import { formatLongDate, isoToInputDate } from './date';
 import { shareTextFile, type TransferFormat } from './fileTransfer';
 
 export type ExportFormat = TransferFormat;
@@ -14,11 +12,11 @@ export function workoutsToCsv(workouts: Workout[]): string {
         'workout',
         'comment',
         'exercise',
-        'exercise_comment',
         'type',
         'set',
         'reps',
         'weight_kg',
+        'exercise_comment',
     ];
     const rows: string[] = [header.join(',')];
     for (const w of workouts) {
@@ -30,11 +28,11 @@ export function workoutsToCsv(workouts: Workout[]): string {
                         w.name,
                         w.comment,
                         ex.name,
-                        ex.comment,
                         ex.type,
                         i + 1,
                         set.reps,
                         set.weight,
+                        ex.comment ?? '',
                     ]
                         .map(csvCell)
                         .join(',')
@@ -54,7 +52,7 @@ export function workoutsToJson(workouts: Workout[]): string {
         exercises: w.exercises.map((ex) => ({
             name: ex.name,
             type: ex.type,
-            comment: ex.comment,
+            comment: ex.comment ?? '',
             sets: ex.sets.map((s) => ({ reps: s.reps, weight: s.weight })),
         })),
     }));
@@ -72,48 +70,5 @@ export async function exportHistory(
         format === 'csv' ? workoutsToCsv(workouts) : workoutsToJson(workouts),
         format,
         'Экспорт истории тренировок'
-    );
-}
-
-// ─── Одна тренировка ───────────────────────────────────────────────
-
-export type SingleWorkoutExportFormat = ExportFormat | 'text';
-
-function setToText(ex: WorkoutExercise, reps: number, weight: number): string {
-    if (ex.type === 'bodyweight') return `${reps} повт.`;
-    if (ex.type === 'assisted') return `${reps} × ${weight} кг помощи`;
-    return `${reps} × ${weight} кг`;
-}
-
-/** Читаемый текст для мессенджера; импорт из него не поддерживается */
-export function workoutToText(w: Workout): string {
-    const lines = [`${w.name} — ${formatLongDate(w.date)}`];
-    if (w.comment) lines.push(w.comment);
-    for (const ex of w.exercises) {
-        lines.push('', ex.name);
-        ex.sets.forEach((s, i) =>
-            lines.push(`${i + 1}. ${setToText(ex, s.reps, s.weight)}`)
-        );
-        if (ex.comment) lines.push(`💬 ${ex.comment}`);
-    }
-    return lines.join('\n');
-}
-
-/** Текст — через системное «Поделиться» сообщением, CSV/JSON — файлом в том же формате, что и история */
-export async function exportWorkout(
-    workout: Workout,
-    format: SingleWorkoutExportFormat
-): Promise<void> {
-    if (format === 'text') {
-        await Share.share({ message: workoutToText(workout) });
-        return;
-    }
-    await shareTextFile(
-        `workout-${isoToInputDate(workout.date)}-${workout.id}.${format}`,
-        format === 'csv'
-            ? workoutsToCsv([workout])
-            : workoutsToJson([workout]),
-        format,
-        'Экспорт тренировки'
     );
 }

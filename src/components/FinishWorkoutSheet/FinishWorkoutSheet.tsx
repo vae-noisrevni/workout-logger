@@ -32,7 +32,7 @@ interface Props {
   /** Данные редактируемой тренировки из истории; если заданы, форма работает в режиме сохранения изменений */
   initial?: FinishWorkoutData | null;
   /** Коллбэк при подтверждении. Возвращает данные формы. */
-  onConfirm: (data: FinishWorkoutData) => void;
+  onConfirm: (data: FinishWorkoutData) => boolean;
 }
 
 export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
@@ -61,12 +61,12 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
         return;
       }
       const trimmedName = name.trim() || defaultWorkoutName();
-      onConfirm({
+      const saved = onConfirm({
         name: trimmedName,
         date: iso,
         comment: comment.trim(),
       });
-      sheetRef.current?.close();
+      if (saved) sheetRef.current?.close();
     };
 
     const canConfirm = exerciseCount > 0 && name.trim().length > 0;
