@@ -36,6 +36,7 @@ export default function ExercisesScreen() {
         create,
         update,
         remove,
+        toggleFavorite,
     } = useExercises();
     const dialog = useDialog();
     const { bumpExercises } = useDataVersion();
@@ -195,6 +196,7 @@ export default function ExercisesScreen() {
                             colors={colors}
                             onPress={() => openEdit(item)}
                             onDelete={() => remove(item.id)}
+                            onToggleFavorite={() => toggleFavorite(item)}
                         />
                     )}
                 />
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 16,
-        paddingTop: 60,
+        paddingTop: 12,
     },
     transferRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
     transferBtn: {

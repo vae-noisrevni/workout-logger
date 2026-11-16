@@ -61,7 +61,13 @@ export function useExercises() {
         [bumpExercises]
     );
 
+    const toggleFavorite = (exercise: Exercise) => {
+        ExerciseRepo.setExerciseFavorite(exercise.id, !exercise.is_favorite);
+        bumpExercises();
+    };
+
     return {
+        toggleFavorite,
         exercises,
         search,
         setSearch,

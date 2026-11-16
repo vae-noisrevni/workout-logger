@@ -16,9 +16,9 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 export function exercisesToCsv(exercises: Exercise[]): string {
     const rows = [
-        'name,type,description,color',
+        'name,type,description,color,favorite,weight_unit',
         ...exercises.map((e) =>
-            [e.name, e.type, e.description, e.color].map(csvCell).join(','),
+            [e.name, e.type, e.description, e.color, String(e.is_favorite), e.weight_unit].map(csvCell).join(','),
         ),
     ];
     // BOM, чтобы Excel корректно открыл кириллицу
@@ -31,6 +31,8 @@ export function exercisesToJson(exercises: Exercise[]): string {
         type: e.type,
         description: e.description,
         color: e.color,
+        favorite: e.is_favorite,
+        weight_unit: e.weight_unit,
     }));
     return JSON.stringify({ version: 1, exercises: data }, null, 2);
 }
@@ -83,7 +85,20 @@ function toExercise(
         return null;
     }
 
+    const unit = raw.weight_unit === undefined || raw.weight_unit === null || raw.weight_unit === ''
+        ? 'kg' : typeof raw.weight_unit === 'string' ? raw.weight_unit.trim().toLowerCase() : null;
+    if (unit !== 'kg' && unit !== 'lb') {
+        errors.push(`${where}: weight_unit должен быть kg или lb`);
+        return null;
+    }
+    const favorite = parseFavorite(raw.favorite);
+    if (favorite === null) {
+        errors.push(`${where}: favorite должен быть true или false`);
+        return null;
+    }
     return {
+        is_favorite: favorite,
+        weight_unit: unit,
         name,
         type: typeRaw as ExerciseType,
         description:
@@ -138,4 +153,13 @@ export function parseExercises(
     throwIfErrors(errors);
     if (result.length === 0) throw new ImportError('В файле нет упражнений');
     return result;
+}
+
+export function parseFavorite(value: unknown): boolean | null {
+    if (value === undefined || value === null || value === '') return false;
+    if (typeof value === 'boolean') return value;
+    if (typeof value !== 'string') return null;
+    const text = value.trim().toLowerCase();
+    if (!text || ['false', '0', 'нет', 'no'].includes(text)) return false;
+    return ['true', '1', 'да', 'yes'].includes(text) ? true : null;
 }

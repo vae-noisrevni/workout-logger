@@ -22,6 +22,14 @@
       "required": ["name"],
       "additionalProperties": false,
       "properties": {
+        "weight_unit": {
+          "enum": ["kg", "lb"],
+          "default": "kg"
+        },
+        "favorite": {
+          "type": "boolean",
+          "default": false
+        },
         "name": {
           "type": "string",
           "minLength": 1,

@@ -9,6 +9,7 @@ export interface SetEntry {
 }
 
 export interface DraftExercise {
+    comment?: string;
     exercise_id: number;
     sets: SetEntry[];
 }
@@ -21,6 +22,7 @@ export interface WorkoutSet {
 }
 
 export interface WorkoutExercise {
+    comment: string;
     id: number; // id из таблицы workout_exercises
     workout_id: number;
     exercise_id: number;
@@ -32,6 +34,8 @@ export interface WorkoutExercise {
 }
 
 export interface Workout {
+    preset_id: number | null;
+    preset_name: string | null;
     id: number;
     name: string;
     date: string; // ISO
@@ -41,11 +45,14 @@ export interface Workout {
 
 // ─── Вход для создания ─────────────────────────────────────────────
 export interface CreateWorkoutInput {
+    preset_id?: number | null;
+    preset_name?: string | null;
     name: string;
     date: string; // ISO
     comment: string;
     exercises: Array<{
         exercise_id: number;
+        comment?: string;
         sets: Array<{ reps: number; weight: number }>;
     }>;
 }
@@ -58,6 +65,7 @@ export interface ImportedWorkout {
     comment: string;
     exercises: Array<{
         name: string;
+        comment: string;
         sets: Array<{ reps: number; weight: number }>;
     }>;
 }

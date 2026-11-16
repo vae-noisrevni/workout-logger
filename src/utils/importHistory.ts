@@ -62,7 +62,7 @@ function toWorkout(
                 }
                 return { reps, weight };
             });
-            exercises.push({ name: exName, sets });
+            exercises.push({ name: exName, comment: typeof ex.comment === 'string' ? ex.comment : '', sets });
         });
     }
 
@@ -117,10 +117,10 @@ export function parseWorkouts(
 
         // Одна строка = один подход. Тренировка определяется парой (date, workout),
         // упражнение — названием внутри неё; порядок берётся из порядка строк.
-        const workouts = new Map<string, Raw & { exercises: Map<string, Raw[]> }>();
+        const workouts = new Map<string, Raw & { exercises: Map<string, { comment: string; sets: Raw[] }> }>();
         rows.slice(1).forEach((cells) => {
             const row: Record<string, string> = {};
-            header.forEach((h, idx) => (row[h] = (cells[idx] ?? '').trim()));
+            header.forEach((h, idx) => (row[h] = ['comment', 'exercise_comment'].includes(h) ? (cells[idx] ?? '') : (cells[idx] ?? '').trim()));
 
             const key = `${row.date}\u0000${row.workout}`;
             let w = workouts.get(key);
@@ -133,9 +133,14 @@ export function parseWorkouts(
                 };
                 workouts.set(key, w);
             }
-            const sets = w.exercises.get(row.exercise) ?? [];
-            sets.push({ reps: row.reps, weight: row.weight_kg });
-            w.exercises.set(row.exercise, sets);
+            const exercise = w.exercises.get(row.exercise) ?? { comment: '', sets: [] };
+            const comment = row.exercise_comment ?? '';
+            if (comment && exercise.comment && comment !== exercise.comment) {
+                errors.push(`Упражнение «${row.exercise}»: разные exercise_comment в одной тренировке`);
+            }
+            if (comment) exercise.comment = comment;
+            exercise.sets.push({ reps: row.reps, weight: row.weight_kg });
+            w.exercises.set(row.exercise, exercise);
         });
 
         let i = 0;
@@ -144,9 +149,10 @@ export function parseWorkouts(
             const w2 = toWorkout(
                 {
                     ...w,
-                    exercises: [...w.exercises].map(([name, sets]) => ({
+                    exercises: [...w.exercises].map(([name, exercise]) => ({
                         name,
-                        sets,
+                        comment: exercise.comment,
+                        sets: exercise.sets,
                     })),
                 },
                 `Тренировка ${i} («${w.name}», ${w.date})`,

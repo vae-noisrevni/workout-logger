@@ -40,6 +40,8 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
         initial?.color ?? DEFAULT_EXERCISE_COLOR,
     );
 
+    const [isFavorite, setIsFavorite] = useState(initial?.is_favorite ?? false);
+
     const isValid = name.trim().length > 0;
 
     return (
@@ -160,6 +162,10 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                 ]}
             />
 
+            <Pressable onPress={() => setIsFavorite(!isFavorite)} accessibilityRole="checkbox" accessibilityState={{ checked: isFavorite }} style={styles.typeRow}>
+                <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={24} color={colors.accent} />
+                <Text style={{ color: colors.textPrimary }}>Избранное</Text>
+            </Pressable>
             <View style={styles.actions}>
                 <Pressable
                     onPress={onCancel}
@@ -182,6 +188,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                             type,
                             description: description.trim(),
                             color,
+                            is_favorite: isFavorite,
                         })
                     }
                     disabled={!isValid}

@@ -8,24 +8,24 @@ import { useTheme } from '@/theme/ThemeContext';
 import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
 import { pickTextFile } from '@/utils/fileTransfer';
 import { parseWorkouts } from '@/utils/importHistory';
+import { formatWorkoutDate } from '@/utils/date';
+import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useRef } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 import type { Workout } from '@/types/workouts';
 
-const formatDate = (iso: string): string =>
-    new Date(iso).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
-
 export default function HistoryScreen() {
     const colors = useTheme();
     const { workouts, remove } = useWorkouts();
+    const [search, setSearch] = useState('');
+    const results = useMemo(
+        () => searchWorkoutHistory(workouts, search),
+        [workouts, search],
+    );
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
     const { bumpWorkouts } = useDataVersion();
@@ -95,6 +95,7 @@ export default function HistoryScreen() {
 
     const handleWorkoutPress = useCallback(
         (workout: Workout) => {
+            if (!draft.hydrated) return;
             const hasCurrent = draft.draft.length > 0 || draft.editing !== null;
             if (!hasCurrent) {
                 openInEditor(workout);
@@ -115,7 +116,7 @@ export default function HistoryScreen() {
                 ],
             });
         },
-        [draft.draft.length, draft.editing, dialog, openInEditor],
+        [draft.hydrated, draft.draft.length, draft.editing, dialog, openInEditor],
     );
 
     const handleDelete = useCallback(
@@ -148,15 +149,40 @@ export default function HistoryScreen() {
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
         >
+            <View style={[
+                styles.searchRow,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}>
+                <Ionicons name="search" size={20} color={colors.textSecondary} />
+                <TextInput
+                    value={search}
+                    onChangeText={setSearch}
+                    placeholder="Поиск по упражнению..."
+                    accessibilityLabel="Поиск по упражнению в истории"
+                    placeholderTextColor={colors.textSecondary}
+                    autoCorrect={false}
+                    style={[styles.searchInput, { color: colors.textPrimary }]}
+                />
+                {search.length > 0 && (
+                    <Pressable
+                        onPress={() => setSearch('')}
+                        accessibilityLabel="Очистить поиск"
+                        hitSlop={10}
+                    >
+                        <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
+                    </Pressable>
+                )}
+            </View>
             <FlatList
-                data={workouts}
-                keyExtractor={(w) => String(w.id)}
+                data={results}
+                keyExtractor={({ workout }) => String(workout.id)}
+                keyboardShouldPersistTaps="handled"
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={
                     <Text
                         style={[styles.empty, { color: colors.textSecondary }]}
                     >
-                        История пока пуста
+                        {workouts.length === 0 ? 'История пока пуста' : 'Ничего не найдено'}
                     </Text>
                 }
                 ListHeaderComponent={
@@ -209,7 +235,7 @@ export default function HistoryScreen() {
                         </Pressable>
                     </View>
                 }
-                renderItem={({ item }) => {
+                renderItem={({ item: { workout: item, matchingNames } }) => {
                     const setsCount = item.exercises.reduce(
                         (sum, ex) => sum + ex.sets.length,
                         0,
@@ -264,9 +290,15 @@ export default function HistoryScreen() {
                                 />
                             </View>
                             <Text style={{ color: colors.textSecondary }}>
-                                {formatDate(item.date)} · {item.exercises.length}{' '}
+                                {formatWorkoutDate(item.date)} · {item.exercises.length}{' '}
                                 упр. · {setsCount} подх.
                             </Text>
+                            {matchingNames.length > 0 && (
+                                <Text style={{ color: colors.textPrimary }}>
+                                    {matchingNames.join(', ')}
+                                </Text>
+                            )}
+                            {item.preset_name && <Text style={{ color: colors.textSecondary }}>Пресет: {item.preset_name}</Text>}
                             <View style={styles.dots}>
                                 {item.exercises.map((ex) => (
                                     <View
@@ -289,6 +321,18 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    searchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginHorizontal: 16,
+        marginTop: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    searchInput: { flex: 1, fontSize: 16, paddingVertical: 0 },
     center: { alignItems: 'center', justifyContent: 'center' },
     list: { padding: 16, gap: 10 },
     transferRow: { flexDirection: 'row', gap: 10, marginBottom: 6 },

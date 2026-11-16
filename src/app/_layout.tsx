@@ -1,5 +1,6 @@
 // src/app/_layout.tsx
 import { AnimatedSplash } from '@/components/AnimatedSplash/AnimatedSplash';
+import { AndroidStatusBar } from '@/components/AndroidStatusBar/AndroidStatusBar';
 import { DialogProvider } from '@/components/ConfirmDialog/DialogProvider';
 import { DataVersionProvider } from '@/context/DataVersionContext';
 import { WorkoutDraftProvider } from '@/context/WorkoutDraftContext';
@@ -49,6 +50,7 @@ export default function RootLayout() {
                                     <Stack
                                         screenOptions={{ headerShown: false }}
                                     />
+                                    <AndroidStatusBar />
                                 </WorkoutDraftProvider>
                             </DialogProvider>
                         </WorkoutsVersionProvider>

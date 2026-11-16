@@ -6,6 +6,7 @@ export interface ResolvedDraftExercise extends DraftExercise {
     name: string;
     type: ExerciseType;
     color: string;
+    weight_unit: Exercise['weight_unit'];
 }
 
 export function resolveDraft(
@@ -22,6 +23,7 @@ export function resolveDraft(
                 name: ex.name,
                 type: ex.type,
                 color: ex.color,
+                weight_unit: ex.weight_unit,
             };
         })
         .filter((x): x is ResolvedDraftExercise => x !== null);

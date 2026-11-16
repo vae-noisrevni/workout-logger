@@ -14,6 +14,15 @@ const MONTHS_RU = [
     'декабря',
 ];
 
+export function formatWorkoutDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+}
+
 export function defaultWorkoutName(date: Date = new Date()): string {
     return `Тренировка от ${date.getDate()} ${MONTHS_RU[date.getMonth()]}`;
 }
@@ -54,3 +63,9 @@ export function yesterdayInputDate(): string {
     d.setDate(d.getDate() - 1);
     return isoToInputDate(d.toISOString());
 }
+
+const MONTHS_SHORT_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const MONTHS_DATIVE_RU = ['январю', 'февралю', 'марту', 'апрелю', 'маю', 'июню', 'июлю', 'августу', 'сентябрю', 'октябрю', 'ноябрю', 'декабрю'];
+export const monthShortLabel = (key: string) => MONTHS_SHORT_RU[Number(key.slice(5)) - 1];
+export const monthDativeLabel = (key: string, relativeTo: string) =>
+    `${MONTHS_DATIVE_RU[Number(key.slice(5)) - 1]}${key.slice(0, 4) === relativeTo.slice(0, 4) ? '' : ` ${key.slice(0, 4)}`}`;

@@ -12,6 +12,8 @@ import type {
 import { getDatabase } from './init';
 
 interface WorkoutRow {
+    preset_id: number | null;
+    preset_name: string | null;
     id: number;
     name: string;
     date: string;
@@ -19,6 +21,7 @@ interface WorkoutRow {
 }
 
 interface WorkoutExerciseRow {
+    comment: string;
     id: number;
     workout_id: number;
     exercise_id: number;
@@ -41,7 +44,7 @@ interface WorkoutSetRow {
 export function getAllWorkouts(): Workout[] {
     const db = getDatabase();
     const workouts = db.getAllSync<WorkoutRow>(
-        'SELECT id, name, date, comment FROM workouts ORDER BY date DESC'
+        'SELECT id, name, date, comment, preset_id, preset_name FROM workouts ORDER BY date DESC'
     );
     return workouts.map((w) => ({
         ...w,
@@ -52,7 +55,7 @@ export function getAllWorkouts(): Workout[] {
 export function getWorkoutById(id: number): Workout | null {
     const db = getDatabase();
     const w = db.getFirstSync<WorkoutRow>(
-        'SELECT id, name, date, comment FROM workouts WHERE id = ?',
+        'SELECT id, name, date, comment, preset_id, preset_name FROM workouts WHERE id = ?',
         [id]
     );
     if (!w) return null;
@@ -69,7 +72,8 @@ function getWorkoutExercises(workoutId: number): WorkoutExercise[] {
             e.name,
             e.type,
             e.color,
-            we.sort_order
+            we.sort_order,
+            we.comment
          FROM workout_exercises we
          JOIN exercises e ON e.id = we.exercise_id
          WHERE we.workout_id = ?
@@ -104,9 +108,9 @@ function insertExercises(
     exercises.forEach((ex, exIndex) => {
         const weResult = db.runSync(
             `INSERT INTO workout_exercises
-                (workout_id, exercise_id, sort_order)
-             VALUES (?, ?, ?)`,
-            [workoutId, ex.exercise_id, exIndex]
+                (workout_id, exercise_id, sort_order, comment)
+             VALUES (?, ?, ?, ?)`,
+            [workoutId, ex.exercise_id, exIndex, ex.comment ?? '']
         );
         const workoutExerciseId = weResult.lastInsertRowId;
 
@@ -127,8 +131,8 @@ function insertWorkout(
     input: CreateWorkoutInput
 ): number {
     const result = db.runSync(
-        'INSERT INTO workouts (name, date, comment) VALUES (?, ?, ?)',
-        [input.name, input.date, input.comment]
+        'INSERT INTO workouts (name, date, comment, preset_id, preset_name) VALUES (?, ?, ?, ?, ?)',
+        [input.name, input.date, input.comment, input.preset_id ?? null, input.preset_name ?? null]
     );
     insertExercises(db, result.lastInsertRowId, input.exercises);
     return result.lastInsertRowId;
@@ -149,8 +153,8 @@ export function updateWorkout(id: number, input: CreateWorkoutInput): void {
 
     db.withTransactionSync(() => {
         db.runSync(
-            'UPDATE workouts SET name = ?, date = ?, comment = ? WHERE id = ?',
-            [input.name, input.date, input.comment, id]
+            'UPDATE workouts SET name = ?, date = ?, comment = ?, preset_id = ?, preset_name = ? WHERE id = ?',
+            [input.name, input.date, input.comment, input.preset_id ?? null, input.preset_name ?? null, id]
         );
         db.runSync('DELETE FROM workout_exercises WHERE workout_id = ?', [id]);
         insertExercises(db, id, input.exercises);
@@ -220,6 +224,7 @@ export function importWorkouts(items: ImportedWorkout[]): ImportResult {
                 comment: w.comment,
                 exercises: w.exercises.map((ex) => ({
                     exercise_id: idByName.get(ex.name.toLowerCase())!,
+                    comment: ex.comment,
                     sets: ex.sets,
                 })),
             });

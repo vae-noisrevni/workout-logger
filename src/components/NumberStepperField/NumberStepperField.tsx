@@ -1,7 +1,7 @@
 // src/components/NumberStepperField/NumberStepperField.tsx
 import type { ThemeColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface Props {
@@ -27,21 +27,18 @@ export function NumberStepperField({
 }: Props) {
     // Локальная строка нужна, чтобы можно было стереть поле и ввести «5.» / «0,»
     const [text, setText] = useState(format(value));
+    const dirty = useRef(false);
     const [focused, setFocused] = useState(false);
-
-    // Внешние изменения (кнопки, восстановление черновика) синхронизируем,
-    // пока пользователь сам не печатает
-    useEffect(() => {
-        if (!focused) setText(format(value));
-    }, [value, focused]);
 
     const commit = (n: number) => {
         const next = Math.max(0, n);
+        dirty.current = false;
         setText(format(next));
         onChange(next);
     };
 
     const handleChangeText = (raw: string) => {
+        dirty.current = true;
         const cleaned = decimal
             ? raw.replace(',', '.').replace(/[^0-9.]/g, '')
             : raw.replace(/[^0-9]/g, '');
@@ -56,6 +53,8 @@ export function NumberStepperField({
 
     const handleBlur = () => {
         setFocused(false);
+        if (!dirty.current) return;
+        dirty.current = false;
         const n = parseFloat(text);
         const safe = isNaN(n) ? 0 : n;
         setText(format(safe));
@@ -85,9 +84,9 @@ export function NumberStepperField({
                     <Ionicons name="remove" size={22} color={colors.accent} />
                 </Pressable>
                 <TextInput
-                    value={text}
+                    value={focused ? text : format(value)}
                     onChangeText={handleChangeText}
-                    onFocus={() => setFocused(true)}
+                    onFocus={() => { setText(format(value)); setFocused(true); }}
                     onBlur={handleBlur}
                     selectTextOnFocus
                     keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
