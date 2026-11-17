@@ -1,8 +1,7 @@
 // src/app/(tabs)/history.tsx
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
-import { useDataVersion } from '@/context/DataVersionContext';
 import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
-import * as WorkoutRepo from '@/db/workouts';
+import { useWorkoutWrites } from '@/hooks/useDataQueries';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { useTheme } from '@/theme/ThemeContext';
 import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
@@ -12,9 +11,9 @@ import { formatWorkoutDate } from '@/utils/date';
 import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 import type { Workout } from '@/types/workouts';
 
@@ -28,9 +27,7 @@ export default function HistoryScreen() {
     );
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
-    const { bumpWorkouts } = useDataVersion();
-    // Открытая свайпом карточка — чтобы закрыть её, если пользователь отменил удаление
-    const swipeRefs = useRef<Record<number, Swipeable | null>>({});
+    const { importData } = useWorkoutWrites();
 
     const handleExport = useCallback(
         async (format: ExportFormat) => {
@@ -65,10 +62,9 @@ export default function HistoryScreen() {
         try {
             const file = await pickTextFile();
             if (!file) return;
-            const { added, skipped } = WorkoutRepo.importWorkouts(
+            const { added, skipped } = await importData(
                 parseWorkouts(file.text, file.format),
             );
-            bumpWorkouts();
             dialog.show({
                 title: 'Импорт завершён',
                 message:
@@ -83,7 +79,7 @@ export default function HistoryScreen() {
                 message: e instanceof Error ? e.message : 'Неизвестная ошибка',
             });
         }
-    }, [dialog, bumpWorkouts]);
+    }, [dialog, importData]);
 
     const openInEditor = useCallback(
         (workout: Workout) => {
@@ -128,7 +124,6 @@ export default function HistoryScreen() {
                     {
                         text: 'Отмена',
                         style: 'cancel',
-                        onPress: () => swipeRefs.current[workout.id]?.close(),
                     },
                     {
                         text: 'Удалить',
@@ -241,28 +236,7 @@ export default function HistoryScreen() {
                         0,
                     );
                     return (
-                        <Swipeable
-                            ref={(r) => {
-                                swipeRefs.current[item.id] = r;
-                            }}
-                            renderRightActions={() => (
-                                <Pressable
-                                    onPress={() => handleDelete(item)}
-                                    style={[
-                                        styles.deleteAction,
-                                        { backgroundColor: colors.danger },
-                                    ]}
-                                >
-                                    <Ionicons
-                                        name="trash-outline"
-                                        size={22}
-                                        color="#fff"
-                                    />
-                                </Pressable>
-                            )}
-                            overshootRight={false}
-                            rightThreshold={40}
-                        >
+                        <SwipeToDelete radius={14} onDelete={() => handleDelete(item)}>
                         <Pressable
                             onPress={() => handleWorkoutPress(item)}
                             style={[
@@ -311,7 +285,7 @@ export default function HistoryScreen() {
                                 ))}
                             </View>
                         </Pressable>
-                        </Swipeable>
+                        </SwipeToDelete>
                     );
                 }}
             />

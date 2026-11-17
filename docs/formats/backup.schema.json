@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Workout Logger — backup",
+  "type": "object",
+  "required": [
+    "kind",
+    "version",
+    "exportedAt",
+    "exercises",
+    "presets",
+    "workouts",
+    "bodyWeight"
+  ],
+  "properties": {
+    "kind": {
+      "const": "workout-logger-backup"
+    },
+    "version": {
+      "const": 1
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "description",
+          "color",
+          "is_favorite"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "weighted",
+              "assisted",
+              "bodyweight"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "weight_unit": {
+            "enum": [
+              "kg",
+              "lb"
+            ]
+          }
+        }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "exercises"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "archived": {
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "exercise_id",
+                "sets"
+              ],
+              "properties": {
+                "exercise_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "reps",
+                      "weight"
+                    ],
+                    "properties": {
+                      "reps": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "weight": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                },
+                "comment": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "workouts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "date",
+          "comment",
+          "exercises"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "date": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "preset_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "preset_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "exercise_id",
+                "sets"
+              ],
+              "properties": {
+                "exercise_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "reps",
+                      "weight"
+                    ],
+                    "properties": {
+                      "reps": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "weight": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                },
+                "comment": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "bodyWeight": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "weight_kg"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "date": {
+            "type": "string"
+          },
+          "weight_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      }
+    }
+  }
+}

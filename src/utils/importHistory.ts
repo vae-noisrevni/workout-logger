@@ -8,10 +8,7 @@ import { ImportError, throwIfErrors } from './importError';
 /** 'YYYY-MM-DD' или любая ISO-строка → ISO; null, если дата не распознана */
 function parseDate(value: unknown): string | null {
     if (typeof value !== 'string') return null;
-    const s = value.trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return inputDateToIso(s);
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d.toISOString();
+    return inputDateToIso(value);
 }
 
 /** Принимает число или строку с запятой/точкой как разделителем дробной части */
@@ -35,7 +32,7 @@ function toWorkout(
     if (!name) errors.push(`${where}: не указано название (name)`);
 
     const date = parseDate(raw.date);
-    if (!date) errors.push(`${where}: date должна быть вида ГГГГ-ММ-ДД или ISO`);
+    if (!date) errors.push(`${where}: неверная дата «${String(raw.date)}»`);
 
     const exercises: ImportedWorkout['exercises'] = [];
     if (!Array.isArray(raw.exercises) || raw.exercises.length === 0) {

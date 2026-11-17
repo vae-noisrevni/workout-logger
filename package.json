@@ -6,6 +6,7 @@
     "@expo/ui": "~58.0.26",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@tanstack/react-query": "^5.108.0",
     "expo": "^58.0.0",
     "expo-constants": "~58.0.14",
     "expo-device": "~58.0.5",
@@ -46,6 +47,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "release": "eas build --platform android --profile preview",
+    "release:no-wait": "npx --yes eas-cli@latest build --platform android --profile preview --no-wait --non-interactive",
     "build:android:dev": "eas build --platform android --profile development",
     "build:android:prod": "eas build --platform android --profile production"
   },

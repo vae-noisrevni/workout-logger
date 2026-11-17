@@ -1,4 +1,4 @@
-import { displayNumber } from '@/utils/stats';
+import { WeightValue } from '@/components/WeightValue/WeightValue';
 // src/components/WorkoutCard/WorkoutCard.tsx
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
@@ -78,20 +78,14 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                                     повт.
                                 </Text>
                             </Text>
-                            {exercise.type !== 'bodyweight' && (
+                            {true && (
                                 <Text
                                     style={[
                                         styles.setWeight,
                                         { color: colors.textPrimary },
                                     ]}
                                 >
-                                    {displayNumber(set.weight)}
-                                    <Text
-                                        style={{ color: colors.textSecondary }}
-                                    >
-                                        {' '}
-                                        кг
-                                    </Text>
+                                    <WeightValue value={set.weight}/>
                                 </Text>
                             )}
                         </View>

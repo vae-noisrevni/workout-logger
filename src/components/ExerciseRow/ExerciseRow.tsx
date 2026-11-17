@@ -4,9 +4,8 @@ import type { ThemeColors } from '@/theme/colors';
 import type { Exercise } from '@/types/exercise';
 import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
-import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 interface Props {
     exercise: Exercise;
@@ -17,27 +16,8 @@ interface Props {
 }
 
 export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavorite }: Props) {
-    const swipeRef = useRef<Swipeable>(null);
-
-    const renderRightActions = () => (
-        <Pressable
-            onPress={() => {
-                swipeRef.current?.close();
-                onDelete();
-            }}
-            style={[styles.deleteAction, { backgroundColor: colors.danger }]}
-        >
-            <Ionicons name="trash-outline" size={22} color="#fff" />
-        </Pressable>
-    );
-
     return (
-        <Swipeable
-            ref={swipeRef}
-            renderRightActions={renderRightActions}
-            overshootRight={false}
-            rightThreshold={40}
-        >
+        <SwipeToDelete radius={12} onDelete={onDelete}>
             <Pressable
                 onPress={onPress}
                 style={[
@@ -113,7 +93,7 @@ export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavor
                     color={colors.textSecondary}
                 />
             </Pressable>
-        </Swipeable>
+        </SwipeToDelete>
     );
 }
 

@@ -72,7 +72,7 @@
               "weight": {
                 "type": "number",
                 "minimum": 0,
-                "description": "Вес в кг; для bodyweight — 0, для assisted — величина помощи."
+                "description": "Вес в кг; для bodyweight — дополнительное утяжеление, 0 без утяжеления, для assisted — величина помощи."
               }
             }
           }

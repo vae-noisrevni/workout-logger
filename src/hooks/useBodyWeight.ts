@@ -1,13 +1,3 @@
-import { useMemo } from 'react';
-import { useDataVersion } from '@/context/DataVersionContext';
-import { getBodyWeightEntries } from '@/db/bodyWeight';
-
-export function useBodyWeight() {
-    const { weightRevision, bumpWeight } = useDataVersion();
-    const result = useMemo(() => {
-        void weightRevision;
-        try { return { entries: getBodyWeightEntries(), error: null }; }
-        catch (error) { return { entries: [], error: error instanceof Error ? error.message : 'Не удалось загрузить замеры' }; }
-    }, [weightRevision]);
-    return { ...result, refresh: bumpWeight };
-}
+import {bodyWeightService} from '@/services/data';
+import {keys,useBodyWeightData,useWrite} from './useDataQueries';
+export function useBodyWeight(){const query=useBodyWeightData();const save=useWrite(bodyWeightService.save,[keys.bodyWeight]);const remove=useWrite(bodyWeightService.remove,[keys.bodyWeight]);return {entries:query.data??[],error:query.error?.message??null,save:save.mutateAsync,remove:remove.mutate,pending:save.isPending||remove.isPending};}

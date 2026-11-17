@@ -1,10 +1,9 @@
+import { DataQueryProvider } from '@/query/client';
 // src/app/_layout.tsx
 import { AnimatedSplash } from '@/components/AnimatedSplash/AnimatedSplash';
 import { AndroidStatusBar } from '@/components/AndroidStatusBar/AndroidStatusBar';
 import { DialogProvider } from '@/components/ConfirmDialog/DialogProvider';
-import { DataVersionProvider } from '@/context/DataVersionContext';
 import { WorkoutDraftProvider } from '@/context/WorkoutDraftContext';
-import { WorkoutsVersionProvider } from '@/context/WorkoutsVersionContext';
 import { initializeDatabase } from '@/db/init';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { SplashScreen, Stack } from 'expo-router';
@@ -43,18 +42,16 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
                 <ThemeProvider>
-                    <DataVersionProvider>
-                        <WorkoutsVersionProvider>
                             <DialogProvider>
+                              <DataQueryProvider>
                                 <WorkoutDraftProvider>
                                     <Stack
                                         screenOptions={{ headerShown: false }}
                                     />
                                     <AndroidStatusBar />
                                 </WorkoutDraftProvider>
+                              </DataQueryProvider>
                             </DialogProvider>
-                        </WorkoutsVersionProvider>
-                    </DataVersionProvider>
                 </ThemeProvider>
             </SafeAreaProvider>
         </GestureHandlerRootView>

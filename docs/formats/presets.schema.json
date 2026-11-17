@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Workout Logger — presets",
+  "type": "object",
+  "required": [
+    "kind",
+    "version",
+    "exportedAt",
+    "exercises",
+    "presets"
+  ],
+  "properties": {
+    "kind": {
+      "const": "workout-logger-presets"
+    },
+    "version": {
+      "const": 1
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "description",
+          "color",
+          "is_favorite"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "weighted",
+              "assisted",
+              "bodyweight"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "weight_unit": {
+            "enum": [
+              "kg",
+              "lb"
+            ]
+          }
+        }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "exercises"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "archived": {
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "exercise_id",
+                "sets"
+              ],
+              "properties": {
+                "exercise_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "reps",
+                      "weight"
+                    ],
+                    "properties": {
+                      "reps": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "weight": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                },
+                "comment": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

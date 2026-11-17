@@ -42,15 +42,15 @@ export function useWorkoutDraft() {
     const updateExerciseComment = useCallback((exerciseId: number, comment: string) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
         ? { ...entry, comment } : entry)), [changeDraft]);
     const addSet = useCallback((exerciseId: number) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
-        ? { ...entry, sets: [...entry.sets, createEmptySet()] } : entry)), [changeDraft]);
+        ? { ...entry, sets: [...entry.sets, { ...createEmptySet(), ...(entry.sets.at(-1) ? { reps: entry.sets.at(-1)!.reps, weight: entry.sets.at(-1)!.weight } : {}) }] } : entry)), [changeDraft]);
     const updateSet = useCallback((exerciseId: number, setId: string, patch: Partial<Omit<SetEntry, 'id'>>) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
         ? { ...entry, sets: entry.sets.map((set) => set.id === setId ? { ...set, ...patch } : set) } : entry)), [changeDraft]);
     const removeSet = useCallback((exerciseId: number, setId: string) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
         ? { ...entry, sets: entry.sets.filter((set) => set.id !== setId) } : entry)), [changeDraft]);
-    const replaceSets = useCallback((exerciseId: number, sets: { reps: number; weight: number }[]) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
-        ? { ...entry, sets: sets.map((set) => ({ ...set, id: createSetId() })) } : entry)), [changeDraft]);
+    const replaceSets = useCallback((exerciseId: number, sets: { id?: string; reps: number; weight: number }[]) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
+        ? { ...entry, sets: sets.map((set) => ({ ...set, id: set.id ?? createSetId() })) } : entry)), [changeDraft]);
     const loadWorkout = useCallback((workout: Workout) => { if (hydrated) setState(draftFromWorkout(workout)); }, [hydrated]);
-    const loadPreset = useCallback((preset: WorkoutPreset) => { if (hydrated) setState(draftFromPreset(preset)); }, [hydrated]);
+    const loadPreset = useCallback((preset: WorkoutPreset, withoutSets = true) => { if (hydrated) setState(draftFromPreset(preset, withoutSets)); }, [hydrated]);
     const reset = useCallback(() => { if (hydrated) setState(emptyDraftState()); }, [hydrated]);
     const retryRestore = () => setRestoreAttempt((attempt) => attempt + 1);
     return { ...state, retryRestore, hydrated, storageError, updateExerciseComment, addExercise, removeExercise, addSet, updateSet, removeSet, replaceSets, loadWorkout, loadPreset, reset };

@@ -65,9 +65,8 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen name="presets" options={{ title: "Пресеты", headerRight: () => <ThemeToggle />,
-        tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" color={color} size={size} /> }} />
-      <Tabs.Screen name="stats" options={{ title: "Статистика", headerRight: () => <ThemeToggle />,
-        tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" color={color} size={size} /> }} />
+        tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" color={typeof color === 'string' ? color : colors.textPrimary} size={size} /> }} />
+
     </Tabs>
   );
 }

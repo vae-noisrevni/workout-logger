@@ -1,13 +1,3 @@
-import { useMemo } from 'react';
-import { useDataVersion } from '@/context/DataVersionContext';
-import { getPresets } from '@/db/presets';
-
-export function usePresets() {
-    const { presetsRevision, exercisesRevision, bumpPresets } = useDataVersion();
-    const result = useMemo(() => {
-        void presetsRevision; void exercisesRevision;
-        try { return { presets: getPresets(), error: null }; }
-        catch (error) { return { presets: [], error: error instanceof Error ? error.message : 'Не удалось загрузить пресеты' }; }
-    }, [presetsRevision, exercisesRevision]);
-    return { ...result, refresh: bumpPresets };
-}
+import { presetService } from '@/services/data';
+import { keys,usePresetData,useWrite } from './useDataQueries';
+export function usePresets(){const query=usePresetData();const save=useWrite(presetService.save,[keys.presets]);const remove=useWrite(presetService.remove,[keys.presets]);return {presets:query.data??[],loading:query.isPending,error:query.error?.message??null,save:save.mutateAsync,remove:remove.mutate,pending:save.isPending||remove.isPending};}

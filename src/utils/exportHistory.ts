@@ -72,3 +72,22 @@ export async function exportHistory(
         'Экспорт истории тренировок'
     );
 }
+
+
+export type SingleWorkoutExportFormat = ExportFormat | 'text';
+export async function exportWorkout(workout: Workout, format: SingleWorkoutExportFormat): Promise<void> {
+    if (format === 'text') {
+        const { Share } = await import('react-native');
+        const { formatWorkoutDate } = await import('./date');
+        const lines = [workout.name, formatWorkoutDate(workout.date), workout.comment];
+        for (const exercise of workout.exercises) {
+            lines.push('', exercise.name, ...exercise.sets.map((set, index) =>
+                `${index + 1}. ${set.reps} × ${set.weight} кг`));
+            if (exercise.comment) lines.push(exercise.comment);
+        }
+        await Share.share({ message: lines.filter((line) => line !== undefined).join('\n') });
+        return;
+    }
+    await shareTextFile(`workout-${workout.id}.${format}`,
+        format === 'csv' ? workoutsToCsv([workout]) : workoutsToJson([workout]), format, 'Экспорт тренировки');
+}

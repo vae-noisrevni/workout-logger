@@ -29,9 +29,10 @@ interface Props {
     colors: ThemeColors;
     onSubmit: (data: CreateExerciseInput) => void;
     onCancel: () => void;
+    pending?: boolean;
 }
 
-export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
+export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Props) {
     const initial = mode.type === 'edit' ? mode.exercise : null;
     const [name, setName] = useState(initial?.name ?? '');
     const [type, setType] = useState<ExerciseType>(initial?.type ?? 'weighted');
@@ -45,7 +46,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
     const isValid = name.trim().length > 0;
 
     return (
-        <BottomSheetScrollView contentContainerStyle={styles.form}>
+        <BottomSheetScrollView nestedScrollEnabled contentContainerStyle={styles.form}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
                 {mode.type === 'create' ? 'Новое упражнение' : 'Редактировать'}
             </Text>
@@ -191,7 +192,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel }: Props) {
                             is_favorite: isFavorite,
                         })
                     }
-                    disabled={!isValid}
+                    disabled={!isValid || pending}
                     style={[
                         styles.button,
                         {

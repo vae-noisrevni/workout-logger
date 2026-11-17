@@ -1,12 +1,13 @@
+import { resolveDate } from './date';
 import type { ExerciseType } from '@/types/exercise';
 
 export interface SetLike { reps: number; weight: number }
 export interface StatSetRow extends SetLike { workout_id: number; date: string; exercise_id: number }
 export interface MonthCount { month: string; count: number }
 export const displayNumber = (value: number) => String(Math.round(value * 100) / 100);
-export const setValue = (type: ExerciseType, set: SetLike) => type === 'bodyweight' ? set.reps : set.weight;
+export const setValue = (type: ExerciseType, set: SetLike) => set.weight;
 export const isBetter = (type: ExerciseType, a: number, b: number) => type === 'assisted' ? a < b : a > b;
-export const valueUnit = (type: ExerciseType) => type === 'bodyweight' ? 'повт.' : 'кг';
+export const valueUnit = (type: ExerciseType) => 'кг';
 
 export function bestSet(type: ExerciseType, sets: SetLike[]): SetLike | null {
     return sets.reduce<SetLike | null>((best, set) => {
@@ -20,24 +21,27 @@ export function bestValue(type: ExerciseType, sets: SetLike[]): number | null {
     return best ? setValue(type, best) : null;
 }
 export function monthKey(iso: string): string {
-    const date = new Date(iso);
+    const date = resolveDate(iso);
+    if (!date) return '';
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 export function exerciseProgress(type: ExerciseType, rows: StatSetRow[]) {
     const grouped = new Map<string, SetLike[]>();
     for (const row of rows) {
         const key = monthKey(row.date);
+        if (!key) continue;
         const group = grouped.get(key) ?? [];
         group.push(row);
         grouped.set(key, group);
     }
     const values = [...grouped].sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, sets]) => ({ month, value: bestValue(type, sets)! }));
+        .map(([month, sets]) => { const set = bestSet(type, sets)!; return { month, value: setValue(type, set), reps: set.reps }; });
     const latest = values.at(-1) ?? null;
     const previous = values.at(-2) ?? null;
     const diff = latest && previous ? latest.value - previous.value : null;
-    return { best: bestValue(type, rows), latest, previous, diff,
-        improved: diff === null || diff === 0 ? null : isBetter(type, latest!.value, previous!.value) };
+    const repsDiff = type === 'bodyweight' && latest && previous && diff === 0 ? latest.reps - previous.reps : null;
+    return { best: bestValue(type, rows), bestApproach: bestSet(type, rows), repsDiff, latest, previous, diff,
+        improved: diff === null ? null : diff === 0 ? (repsDiff ? repsDiff > 0 : null) : isBetter(type, latest!.value, previous!.value) };
 }
 export function workoutsPerMonth(dates: string[], now: Date, months = 12): MonthCount[] {
     const counts = new Map<string, number>();
@@ -54,3 +58,5 @@ export function exerciseVolume(type: ExerciseType, sets: SetLike[]): number {
     return sets.reduce((sum, set) => sum + (type === 'weighted' ? set.weight * set.reps : set.reps), 0);
 }
 export const activityColor = (count: number) => count >= 8 ? '#2e7d32' : count >= 5 ? '#ef6c00' : '#c62828';
+
+export const additionalVolume = (sets: SetLike[]) => sets.reduce((sum,set) => sum + set.weight * set.reps, 0);

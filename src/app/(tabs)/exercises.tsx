@@ -1,7 +1,5 @@
 import { ExerciseForm } from '@/components/ExerciseForm/ExerciseForm';
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
-import { useDataVersion } from '@/context/DataVersionContext';
-import * as ExerciseRepo from '@/db/exercises';
 import { ExerciseRow } from '@/components/ExerciseRow/ExerciseRow';
 import { useExercises } from '@/hooks/useExercises';
 import { useTheme } from '@/theme/ThemeContext';
@@ -37,9 +35,9 @@ export default function ExercisesScreen() {
         update,
         remove,
         toggleFavorite,
+        importData, allExercises, pending,
     } = useExercises();
     const dialog = useDialog();
-    const { bumpExercises } = useDataVersion();
     const [sheetMode, setSheetMode] = useState<SheetMode>(null);
     const sheetRef = useRef<BottomSheet>(null);
 
@@ -57,7 +55,7 @@ export default function ExercisesScreen() {
         async (format: TransferFormat) => {
             try {
                 // Выгружаем весь справочник, а не отфильтрованный поиском список
-                await exportExercises(ExerciseRepo.getAllExercises(), format);
+                await exportExercises(allExercises, format);
             } catch (e) {
                 dialog.show({
                     title: 'Ошибка',
@@ -68,7 +66,7 @@ export default function ExercisesScreen() {
                 });
             }
         },
-        [dialog],
+        [dialog, allExercises],
     );
 
     const handleExportPress = useCallback(() => {
@@ -88,8 +86,7 @@ export default function ExercisesScreen() {
             const file = await pickTextFile();
             if (!file) return;
             const items = parseExercises(file.text, file.format);
-            ExerciseRepo.createExercises(items);
-            bumpExercises();
+            await importData(items);
             dialog.show({
                 title: 'Импорт завершён',
                 message: `Добавлено упражнений: ${items.length}`,
@@ -100,7 +97,7 @@ export default function ExercisesScreen() {
                 message: e instanceof Error ? e.message : 'Неизвестная ошибка',
             });
         }
-    }, [dialog, bumpExercises]);
+    }, [dialog, importData]);
 
     const closeSheet = () => sheetRef.current?.close();
 
@@ -215,11 +212,14 @@ export default function ExercisesScreen() {
                     <ExerciseForm
                         mode={sheetMode}
                         colors={colors}
-                        onSubmit={(data) => {
-                            if (sheetMode.type === 'create') create(data);
-                            else update({ id: sheetMode.exercise.id, ...data });
-                            closeSheet();
+                        onSubmit={async (data) => {
+                            try {
+                                if (sheetMode.type === 'create') await create(data);
+                                else await update({ id: sheetMode.exercise.id, ...data });
+                                closeSheet();
+                            } catch {}
                         }}
+                        pending={pending}
                         onCancel={closeSheet}
                     />
                 </BottomSheet>

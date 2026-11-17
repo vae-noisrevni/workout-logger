@@ -1,3 +1,4 @@
+import { DateField } from '@/components/DateField/DateField';
 // src/components/FinishWorkoutSheet/FinishWorkoutSheet.tsx
 import type { ThemeColors } from "@/theme/colors";
 import {
@@ -32,11 +33,12 @@ interface Props {
   /** Данные редактируемой тренировки из истории; если заданы, форма работает в режиме сохранения изменений */
   initial?: FinishWorkoutData | null;
   /** Коллбэк при подтверждении. Возвращает данные формы. */
-  onConfirm: (data: FinishWorkoutData) => boolean;
+  pending?: boolean;
+  onConfirm: (data: FinishWorkoutData) => Promise<boolean>;
 }
 
 export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
-  ({ colors, exerciseCount, initial, onConfirm }, ref) => {
+  ({ colors, exerciseCount, initial, onConfirm, pending }, ref) => {
     const sheetRef = useRef<BottomSheet>(null);
     const [name, setName] = useState("");
     const [dateInput, setDateInput] = useState("");
@@ -54,14 +56,14 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
       close: () => sheetRef.current?.close(),
     }));
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
       const iso = inputDateToIso(dateInput);
       if (!iso) {
-        setDateError("Формат: ГГГГ-ММ-ДД");
+        setDateError("Укажите существующую дату в формате ДД.ММ.ГГГГ");
         return;
       }
       const trimmedName = name.trim() || defaultWorkoutName();
-      const saved = onConfirm({
+      const saved = await onConfirm({
         name: trimmedName,
         date: iso,
         comment: comment.trim(),
@@ -80,6 +82,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
         backgroundStyle={{ backgroundColor: colors.surfaceElevated }}
       >
         <BottomSheetScrollView
+          nestedScrollEnabled
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
@@ -114,13 +117,13 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
           <Text style={[styles.label, { color: colors.textSecondary }]}>
             Дата
           </Text>
-          <TextInput
+          <DateField
+            label="Дата тренировки"
             value={dateInput}
             onChangeText={(v) => {
               setDateInput(v);
               setDateError(null);
             }}
-            placeholder="ГГГГ-ММ-ДД"
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             autoCorrect={false}
@@ -226,7 +229,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
             </Pressable>
             <Pressable
               onPress={handleConfirm}
-              disabled={!canConfirm}
+              disabled={!canConfirm || pending}
               style={[
                 styles.button,
                 {

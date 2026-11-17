@@ -15,8 +15,7 @@ import {
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
 import { SetsSheet, type SetsSheetRef } from '@/components/SetsSheet/SetsSheet';
 import { WorkoutDropZone } from '@/components/WorkoutDropZone/WorkoutDropZone';
-import { useDataVersion } from '@/context/DataVersionContext';
-import * as WorkoutRepo from '@/db/workouts';
+import { useWorkoutWrites } from '@/hooks/useDataQueries';
 import { useExercises } from '@/hooks/useExercises';
 import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
 import { useTheme } from '@/theme/ThemeContext';
@@ -39,10 +38,11 @@ export default function WorkoutScreen() {
     const { exercises } = useExercises();
     const { presets, error: presetsError } = usePresets();
     const [presetSheet, setPresetSheet] = useState<'pick' | 'create' | null>(null);
+    const [withoutSets, setWithoutSets] = useState(true);
     const [search, setSearch] = useState('');
     const draft = useWorkoutDraftContext();
     const dialog = useDialog();
-    const { bumpWorkouts } = useDataVersion();
+    const workoutWrites = useWorkoutWrites();
     const sheetRef = useRef<SetsSheetRef>(null);
     const finishRef = useRef<FinishWorkoutSheetRef>(null);
 
@@ -80,7 +80,7 @@ export default function WorkoutScreen() {
     const saveableCount = resolvedDraft.filter((exercise) => exercise.sets.length > 0).length;
     const choosePreset = (preset: WorkoutPreset) => {
         setPresetSheet(null);
-        const load = () => draft.loadPreset(preset);
+        const load = () => draft.loadPreset(preset, withoutSets);
         if (draft.draft.length || draft.editing) dialog.show({ title: 'Заменить текущую тренировку?',
             message: 'Несохранённые изменения будут заменены упражнениями пресета.', buttons: [
                 { text: 'Оставить текущую', style: 'cancel' }, { text: 'Заменить', style: 'destructive', onPress: load },
@@ -101,7 +101,7 @@ export default function WorkoutScreen() {
     }, [draft.hydrated, saveableCount, dialog]);
 
     const handleFinishConfirm = useCallback(
-        (data: FinishWorkoutData) => {
+        async (data: FinishWorkoutData) => {
             try {
                 const input = {
                     preset_id: draft.origin?.preset_id ?? null,
@@ -119,13 +119,12 @@ export default function WorkoutScreen() {
                     })),
                 };
                 if (draft.editing) {
-                    WorkoutRepo.updateWorkout(draft.editing.id, input);
+                    await workoutWrites.save({ id: draft.editing.id, input });
                 } else {
-                    WorkoutRepo.createWorkout(input);
+                    await workoutWrites.save({ input });
                 }
                 const wasEditing = draft.editing !== null;
                 draft.reset();
-                bumpWorkouts();
                 dialog.show({
                     title: 'Готово',
                     message: wasEditing
@@ -142,7 +141,7 @@ export default function WorkoutScreen() {
                 return false;
             }
         },
-        [draft, resolvedDraft, bumpWorkouts, dialog],
+        [draft, resolvedDraft, workoutWrites, dialog],
     );
 
     const handleCancelEdit = useCallback(() => {
@@ -168,9 +167,12 @@ export default function WorkoutScreen() {
             {!draft.hydrated && draft.storageError && <Action title="Повторить загрузку черновика" onPress={draft.retryRestore} />}
             {presetsError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{presetsError}</Text>}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 16, marginBottom: 10 }}>
-                <Action title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => setPresetSheet('pick')} />
+                <Action title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => { setWithoutSets(true); setPresetSheet('pick'); }} />
                 <Action title="Сохранить как пресет" disabled={!draft.hydrated || !resolvedDraft.length} onPress={() => setPresetSheet('create')} />
             </View>
+            {draft.hydrated && !draft.editing && draft.draft.length > 0 && <View style={{ marginHorizontal: 16, marginBottom: 8 }}>
+                <Action title="Очистить текущую тренировку" onPress={() => dialog.show({ title: 'Очистить черновик?', message: 'Несохранённая тренировка будет удалена.', buttons: [{ text: 'Отмена', style: 'cancel' }, { text: 'Очистить', style: 'destructive', onPress: draft.reset }] })}/>
+            </View>}
             {draft.origin && <Text style={{ color: colors.textSecondary, marginHorizontal: 16, marginBottom: 8 }}>Пресет: {draft.origin.preset_name}</Text>}
             {draft.editing && (
                 <View
@@ -264,15 +266,13 @@ export default function WorkoutScreen() {
                 draft={resolvedDraft}
                 onUpdateExerciseComment={draft.updateExerciseComment}
                 onReplaceSets={draft.replaceSets}
-                onAddSet={draft.addSet}
-                onUpdateSet={draft.updateSet}
-                onRemoveSet={draft.removeSet}
             />
 
             {presetSheet && <ThemeSheet onClose={() => setPresetSheet(null)}>
-                {presetSheet === 'create' ? <PresetEditor initialIds={resolvedDraft.map((exercise) => exercise.exercise_id)} onSaved={() => setPresetSheet(null)} onCancel={() => setPresetSheet(null)} />
+                {presetSheet === 'create' ? <PresetEditor initialExercises={resolvedDraft.map((exercise) => ({ exercise_id: exercise.exercise_id, sets: exercise.sets }))} onSaved={() => setPresetSheet(null)} onCancel={() => setPresetSheet(null)} />
                     : <>
                         <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>Выбрать пресет</Text>
+                        <Action title={`${withoutSets ? '☑' : '☐'} Без подходов`} onPress={() => setWithoutSets(!withoutSets)} />
                         {presets.map((preset) => <Action key={preset.id} title={preset.name} disabled={!preset.exercise_ids.length} onPress={() => choosePreset(preset)} />)}
                         {!presets.length && <Text style={{ color: colors.textSecondary }}>Создайте пресет на вкладке «Пресеты»</Text>}
                     </>}
@@ -282,6 +282,7 @@ export default function WorkoutScreen() {
                 colors={colors}
                 exerciseCount={saveableCount}
                 initial={draft.editing}
+                pending={workoutWrites.pending}
                 onConfirm={handleFinishConfirm}
             />
         </View>

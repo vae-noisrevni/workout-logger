@@ -1,24 +1,18 @@
-import { useMemo } from 'react';
-import { useDataVersion } from '@/context/DataVersionContext';
-import { getAllExercises } from '@/db/exercises';
-import { getSetsForExercises, getAllWorkoutDates } from '@/db/stats';
-import { exerciseProgress, workoutsPerMonth } from '@/utils/stats';
-import { useLocalDate } from './useLocalDate';
-
-export function useStats() {
-    const { exercisesRevision, workoutsRevision } = useDataVersion();
-    const date = useLocalDate();
-    return useMemo(() => {
-        // Ревизии отражают изменения SQLite, не только React-состояния.
-        void exercisesRevision; void workoutsRevision;
-        try {
-            const exercises = getAllExercises().filter((exercise) => exercise.is_favorite);
-            const rows = getSetsForExercises(exercises.map((exercise) => exercise.id));
-            return { favorites: exercises.map((exercise) => ({ exercise,
-                progress: exerciseProgress(exercise.type, rows.filter((row) => row.exercise_id === exercise.id)),
-            })), monthly: workoutsPerMonth(getAllWorkoutDates(), new Date(`${date}T12:00:00`)), error: null };
-        } catch (error) {
-            return { favorites: [], monthly: [], error: error instanceof Error ? error.message : 'Не удалось загрузить статистику' };
-        }
-    }, [exercisesRevision, workoutsRevision, date]);
+import {useMemo} from 'react';
+import {useExercises} from './useExercises';
+import {useWorkouts} from './useWorkouts';
+import {useLocalDate} from './useLocalDate';
+import {exerciseProgress,workoutsPerMonth} from '@/utils/stats';
+export function useStats(){
+    const {allExercises,error:exerciseError}=useExercises();
+    const {workouts,error:workoutError}=useWorkouts();
+    const date=useLocalDate();
+    return useMemo(()=>{
+        const favorites=allExercises.filter(e=>e.is_favorite).map(exercise=>{
+            const rows=workouts.flatMap(workout=>workout.exercises.filter(entry=>entry.exercise_id===exercise.id)
+                .flatMap(entry=>entry.sets.map(set=>({...set,date:workout.date,workout_id:workout.id,exercise_id:entry.exercise_id}))));
+            return {exercise,progress:exerciseProgress(exercise.type,rows)};
+        });
+        return {favorites,monthly:workoutsPerMonth(workouts.map(w=>w.date),new Date(`${date}T12:00:00`)),error:exerciseError??workoutError};
+    },[allExercises,workouts,date,exerciseError,workoutError]);
 }

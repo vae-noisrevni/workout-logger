@@ -11,7 +11,7 @@ export function ThemeSheet({ children, onClose }: { children: ReactNode; onClose
     }, []);
     return <BottomSheet ref={ref} index={0} snapPoints={['70%', '90%']} enablePanDownToClose
         onClose={onClose} backgroundStyle={{ backgroundColor: colors.surfaceElevated }}>
-        <BottomSheetScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 12 }}>
+        <BottomSheetScrollView nestedScrollEnabled keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 12 }}>
             {children}
         </BottomSheetScrollView>
     </BottomSheet>;

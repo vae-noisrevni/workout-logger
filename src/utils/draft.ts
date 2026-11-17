@@ -31,8 +31,8 @@ export function restoreDraft(raw: string | null, legacyEditing: string | null): 
     } catch { return emptyDraftState(); }
 }
 export const serializeDraft = (state: DraftState) => JSON.stringify({ version: 2, ...state });
-export function draftFromPreset(preset: WorkoutPreset): DraftState {
-    return { draft: [...new Set(preset.exercise_ids)].map((exercise_id) => ({ exercise_id, sets: [] })),
+export function draftFromPreset(preset: WorkoutPreset, withoutSets = true): DraftState {
+    return { draft: [...new Set(preset.exercise_ids)].map((exercise_id) => ({ exercise_id, sets: withoutSets ? [] : (preset.exercises?.find((e) => e.exercise_id === exercise_id)?.sets ?? []).map((set) => ({ ...set, id: `${Date.now()}-${Math.random()}` })) })),
         editing: null, origin: { preset_id: preset.id, preset_name: preset.name } };
 }
 export function draftFromWorkout(workout: Workout): DraftState {

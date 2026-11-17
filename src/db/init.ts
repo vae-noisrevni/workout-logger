@@ -72,6 +72,15 @@ export async function initializeDatabase(): Promise<void> {
       weight REAL NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS preset_sets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      preset_id INTEGER NOT NULL,
+      exercise_id INTEGER NOT NULL,
+      reps INTEGER NOT NULL CHECK(reps >= 1),
+      weight REAL NOT NULL CHECK(weight >= 0),
+      sort_order INTEGER NOT NULL,
+      FOREIGN KEY(preset_id,exercise_id) REFERENCES workout_preset_exercises(preset_id,exercise_id) ON DELETE CASCADE
+    );
     CREATE INDEX IF NOT EXISTS workout_sets_exercise_idx ON workout_sets(workout_exercise_id, sort_order);
     CREATE INDEX IF NOT EXISTS workout_exercises_exercise_idx ON workout_exercises(exercise_id, workout_id);
   `);

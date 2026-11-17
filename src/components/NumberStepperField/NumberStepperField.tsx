@@ -13,6 +13,7 @@ interface Props {
     step?: number;
     /** Разрешить дробную часть (вес) */
     decimal?: boolean;
+    compact?: boolean;
 }
 
 const format = (n: number): string => String(Math.round(n * 100) / 100);
@@ -24,6 +25,7 @@ export function NumberStepperField({
     colors,
     step = 1,
     decimal = false,
+    compact = false,
 }: Props) {
     // Локальная строка нужна, чтобы можно было стереть поле и ввести «5.» / «0,»
     const [text, setText] = useState(format(value));
@@ -77,7 +79,7 @@ export function NumberStepperField({
             >
                 <Pressable
                     onPress={() => commit(value - step)}
-                    style={styles.stepBtn}
+                    style={[styles.stepBtn, compact && { width: 28, height: 44 }]}
                     hitSlop={4}
                     accessibilityLabel="Уменьшить"
                 >
@@ -90,11 +92,11 @@ export function NumberStepperField({
                     onBlur={handleBlur}
                     selectTextOnFocus
                     keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
-                    style={[styles.input, { color: colors.textPrimary }]}
+                    style={[styles.input, { color: colors.textPrimary }, compact && { fontSize: 16, minWidth: 28, height: 44 }]}
                 />
                 <Pressable
                     onPress={() => commit(value + step)}
-                    style={styles.stepBtn}
+                    style={[styles.stepBtn, compact && { width: 28, height: 44 }]}
                     hitSlop={4}
                     accessibilityLabel="Увеличить"
                 >

@@ -1,0 +1,67 @@
+{
+  "kind": "workout-logger-backup",
+  "version": 1,
+  "exportedAt": "2026-11-17T10:00:00.000Z",
+  "exercises": [
+    {
+      "id": 1,
+      "name": "Подтягивания",
+      "type": "bodyweight",
+      "description": "",
+      "color": "#a0d37f",
+      "is_favorite": true,
+      "weight_unit": "kg"
+    }
+  ],
+  "presets": [
+    {
+      "id": 1,
+      "name": "Понедельник",
+      "archived": 0,
+      "exercises": [
+        {
+          "exercise_id": 1,
+          "sets": [
+            {
+              "reps": 6,
+              "weight": 10
+            },
+            {
+              "reps": 8,
+              "weight": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workouts": [
+    {
+      "id": 1,
+      "name": "Тренировка от 16.11.2026",
+      "date": "2026-11-15T21:00:00.000Z",
+      "comment": "",
+      "preset_id": 1,
+      "preset_name": "Понедельник",
+      "exercises": [
+        {
+          "exercise_id": 1,
+          "comment": "С диском",
+          "sets": [
+            {
+              "reps": 6,
+              "weight": 10
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "bodyWeight": [
+    {
+      "id": 1,
+      "date": "2026-11-16",
+      "weight_kg": 78.65
+    }
+  ]
+}

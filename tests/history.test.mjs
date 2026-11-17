@@ -21,6 +21,5 @@ test('Поиск находит упражнения без дублей тре�
 test('Дата и день недели используют локальный день на границе UTC', () => {
     assert.equal(process.env.TZ, 'Europe/Moscow');
     const formatted = formatWorkoutDate('2026-11-15T21:00:00.000Z');
-    assert.match(formatted, /пн/);
-    assert.match(formatted, /16 ноября 2026/);
+    assert.equal(formatted, '16.11.2026');
 });

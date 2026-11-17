@@ -1,8 +1,8 @@
+import { WeightValue } from '@/components/WeightValue/WeightValue';
 // src/app/workout/[id].tsx — просмотр тренировки из истории (только чтение)
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
-import { useDataVersion } from '@/context/DataVersionContext';
+import { useWorkouts } from '@/hooks/useWorkouts';
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
-import * as WorkoutRepo from '@/db/workouts';
 import { useOpenWorkoutInEditor } from '@/hooks/useOpenWorkoutInEditor';
 import { useTheme } from '@/theme/ThemeContext';
 import { formatLongDate } from '@/utils/date';
@@ -18,18 +18,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 export default function WorkoutPreviewScreen() {
     const colors = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { workoutsRevision } = useDataVersion();
+    const { workouts, loading } = useWorkouts();
     const openInEditor = useOpenWorkoutInEditor();
     const dialog = useDialog();
 
-    const workout = useMemo(() => {
-        // Ревизия меняется при любой записи тренировок — перечитываем после правки/удаления
-        void workoutsRevision;
-        return WorkoutRepo.getWorkoutById(Number(id));
-    }, [id, workoutsRevision]);
+    const workout = workouts.find((item) => item.id === Number(id));
+
 
     const summary = useMemo(() => {
-        if (!workout) return null;
+    if (!workout) return null;
         let sets = 0;
         let tonnage = 0;
         for (const ex of workout.exercises) {
@@ -79,6 +76,7 @@ export default function WorkoutPreviewScreen() {
         headerTransparent: false,
     };
 
+    if (loading) return <Text>Загрузка…</Text>;
     if (!workout || !summary) {
         return (
             <View
@@ -215,25 +213,14 @@ export default function WorkoutPreviewScreen() {
                                             повт.
                                         </Text>
                                     </Text>
-                                    {ex.type !== 'bodyweight' && (
+                                    {true && (
                                         <Text
                                             style={[
                                                 styles.setValue,
                                                 { color: colors.textPrimary },
                                             ]}
                                         >
-                                            {s.weight}
-                                            <Text
-                                                style={{
-                                                    color: colors.textSecondary,
-                                                }}
-                                            >
-                                                {' '}
-                                                кг
-                                                {ex.type === 'assisted'
-                                                    ? ' помощи'
-                                                    : ''}
-                                            </Text>
+                                            <WeightValue value={s.weight}/>
                                         </Text>
                                     )}
                                 </View>

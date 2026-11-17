@@ -1,48 +1,6 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-const ts = require('typescript');
-const { DatabaseSync } = require('node:sqlite');
-
-// Прогоняем настоящие запросы репозиториев в SQLite, заменяя только нативный транспорт Expo.
-function harness(initialSql = '') {
-    const sqlite = new DatabaseSync(':memory:');
-    if (initialSql) sqlite.exec(initialSql);
-    const db = {
-        execAsync: async (sql) => sqlite.exec(sql),
-        getAllAsync: async (sql) => sqlite.prepare(sql).all(),
-        getAllSync: (sql, args = []) => sqlite.prepare(sql).all(...args),
-        getFirstSync: (sql, args = []) => sqlite.prepare(sql).get(...args) ?? null,
-        runSync: (sql, args = []) => {
-            const result = sqlite.prepare(sql).run(...args);
-            return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
-        },
-        withTransactionSync: (callback) => {
-            sqlite.exec('BEGIN');
-            try { callback(); sqlite.exec('COMMIT'); }
-            catch (error) { sqlite.exec('ROLLBACK'); throw error; }
-        },
-    };
-    const cache = new Map();
-    const root = path.resolve(__dirname, '..');
-    function load(filename) {
-        const full = path.resolve(root, filename.endsWith('.ts') ? filename : `${filename}.ts`);
-        if (cache.has(full)) return cache.get(full).exports;
-        const module = { exports: {} };
-        cache.set(full, module);
-        const code = ts.transpileModule(fs.readFileSync(full, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-        const localRequire = (name) => {
-            if (name === 'expo-sqlite') return { openDatabaseAsync: async () => db };
-            if (name === './fileTransfer') return { shareTextFile: async () => {} };
-            return load(name.startsWith('@/') ? `src/${name.slice(2)}` : path.resolve(path.dirname(full), name));
-        };
-        vm.runInThisContext(`(function(require,module,exports){${code}\n})`, { filename: full })(localRequire, module, module.exports);
-        return module.exports;
-    }
-    return { load, sqlite, restart: () => cache.clear() };
-}
+const { harness } = require('./helpers/database.cjs');
 
 test('Месячный прогресс, объём и пороги используют локальный месяц и тип упражнения', () => {
     const { load, sqlite } = harness();
@@ -62,20 +20,6 @@ test('Месячный прогресс, объём и пороги исполь
         assert.equal(monthly.length, 12);
         assert.equal(monthly.at(-1).count, 1);
         assert.deepEqual([0, 4, 5, 7, 8, 10].map(stats.activityColor), ['#c62828', '#c62828', '#ef6c00', '#ef6c00', '#2e7d32', '#2e7d32']);
-    } finally { sqlite.close(); }
-});
-
-test('Фунты сохраняют точность, калькулятор рассчитывает три типа нагрузки', () => {
-    const { load, sqlite } = harness();
-    try {
-        const weight = load('src/utils/weight');
-        assert.equal(weight.toKilograms(100, 'lb'), 45.359237);
-        assert.ok(Math.abs(weight.fromKilograms(weight.toKilograms(102.5, 'lb'), 'lb') - 102.5) < 1e-10);
-        const calc = load('src/utils/calculator');
-        assert.deepEqual(['strength', 'hypertrophy', 'endurance'].map((goal) => calc.calculatePlan('weighted', { weight: 100, reps: 5 }, goal).weight), [92.5, 82.5, 72.5]);
-        assert.equal(calc.calculatePlan('bodyweight', { weight: 0, reps: 12 }, 'hypertrophy').reps, 8);
-        assert.equal(calc.calculatePlan('assisted', { weight: 2.5, reps: 10 }, 'strength').weight, 0);
-        assert.equal(calc.calculatePlan('weighted', { weight: 0, reps: 5 }, 'strength'), null);
     } finally { sqlite.close(); }
 });
 

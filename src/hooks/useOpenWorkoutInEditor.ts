@@ -25,6 +25,7 @@ export function useOpenWorkoutInEditor(): (workout: Workout) => void {
 
     return useCallback(
         (workout: Workout) => {
+            if (!draft.hydrated) return;
             const hasCurrent = draft.draft.length > 0 || draft.editing !== null;
             // Повторно открыть ту же тренировку, что уже редактируется, — без вопросов и без потери правок
             if (draft.editing?.id === workout.id) {
@@ -50,6 +51,6 @@ export function useOpenWorkoutInEditor(): (workout: Workout) => void {
                 ],
             });
         },
-        [draft.draft.length, draft.editing, dialog, open, router],
+        [draft.hydrated, draft.draft.length, draft.editing, dialog, open, router],
     );
 }

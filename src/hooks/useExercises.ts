@@ -1,80 +1,15 @@
-// src/hooks/useExercises.ts
-
-import { useDataVersion } from '@/context/DataVersionContext';
-import * as ExerciseRepo from '@/db/exercises';
-import type {
-    CreateExerciseInput,
-    Exercise,
-    UpdateExerciseInput,
-} from '@/types/exercise';
-import { useCallback, useEffect, useState } from 'react';
-
-export function useExercises() {
-    const { exercisesRevision, bumpExercises } = useDataVersion();
-    const [exercises, setExercises] = useState<Exercise[]>([]);
-    const [search, setSearch] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const load = useCallback(() => {
-        try {
-            setLoading(true);
-            setError(null);
-            const query = search.trim();
-            const data = query
-                ? ExerciseRepo.getExercisesBySearch(query)
-                : ExerciseRepo.getAllExercises();
-            setExercises(data);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Ошибка загрузки');
-        } finally {
-            setLoading(false);
-        }
-    }, [search]);
-
-    // Перезапрос при изменении поиска ИЛИ revision (кто-то мутировал БД)
-    useEffect(() => {
-        load();
-    }, [load, exercisesRevision]);
-
-    const create = useCallback(
-        (input: CreateExerciseInput) => {
-            ExerciseRepo.createExercise(input);
-            bumpExercises();
-        },
-        [bumpExercises]
-    );
-
-    const update = useCallback(
-        (input: UpdateExerciseInput) => {
-            ExerciseRepo.updateExercise(input);
-            bumpExercises();
-        },
-        [bumpExercises]
-    );
-
-    const remove = useCallback(
-        (id: number) => {
-            ExerciseRepo.deleteExercise(id);
-            bumpExercises();
-        },
-        [bumpExercises]
-    );
-
-    const toggleFavorite = (exercise: Exercise) => {
-        ExerciseRepo.setExerciseFavorite(exercise.id, !exercise.is_favorite);
-        bumpExercises();
-    };
-
-    return {
-        toggleFavorite,
-        exercises,
-        search,
-        setSearch,
-        loading,
-        error,
-        create,
-        update,
-        remove,
-    };
+import { useState } from 'react';
+import { exerciseService } from '@/services/data';
+import { keys, useExerciseData, useWrite } from './useDataQueries';
+import type { Exercise } from '@/types/exercise';
+export function useExercises(){
+    const [search,setSearch]=useState('');const query=useExerciseData();
+    const related=[keys.exercises,keys.presets,keys.workouts];
+    const create=useWrite(exerciseService.create,related);const update=useWrite(exerciseService.update,related);
+    const remove=useWrite(exerciseService.remove,related);const imports=useWrite(exerciseService.import,related);
+    const allExercises=query.data??[];
+    return {allExercises,exercises:allExercises.filter((e)=>e.name.toLowerCase().includes(search.trim().toLowerCase())),
+        search,setSearch,loading:query.isPending,error:query.error?.message??null,pending:create.isPending||update.isPending||remove.isPending||imports.isPending,
+        create:create.mutateAsync,update:update.mutateAsync,remove:remove.mutate,importData:imports.mutateAsync,
+        toggleFavorite:(e:Exercise)=>update.mutate({id:e.id,is_favorite:!e.is_favorite})};
 }

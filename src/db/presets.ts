@@ -6,7 +6,7 @@ export function getPresets(): WorkoutPreset[] {
     const presets = db.getAllSync<{ id: number; name: string }>('SELECT id, name FROM workout_presets WHERE archived = 0 ORDER BY id');
     const links = db.getAllSync<{ preset_id: number; exercise_id: number }>(
         'SELECT preset_id, exercise_id FROM workout_preset_exercises ORDER BY sort_order');
-    return presets.map((preset) => ({ ...preset, exercise_ids: links.filter((link) => link.preset_id === preset.id).map((link) => link.exercise_id) }));
+    return presets.map((preset) => ({ ...preset, exercises: links.filter((link) => link.preset_id === preset.id).map((link) => ({ exercise_id: link.exercise_id, sets: [] })), exercise_ids: links.filter((link) => link.preset_id === preset.id).map((link) => link.exercise_id) }));
 }
 export function savePreset(name: string, exerciseIds: number[], id?: number): void {
     const ids = [...new Set(exerciseIds)];
