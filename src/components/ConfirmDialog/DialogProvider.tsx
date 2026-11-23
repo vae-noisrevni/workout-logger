@@ -1,3 +1,6 @@
+import { Text } from '@/components/Typography/Typography';
+import { headingFont } from '@/theme/typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/ConfirmDialog/DialogProvider.tsx
 import { useTheme } from '@/theme/ThemeContext';
 import {
@@ -8,7 +11,7 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 
 export interface DialogButton {
     text: string;
@@ -52,11 +55,11 @@ export function DialogProvider({ children }: { children: ReactNode }) {
             <Modal
                 visible={dialog !== null}
                 transparent
-                animationType="fade"
+                animationType="none"
                 statusBarTranslucent
                 onRequestClose={() => setDialog(null)}
             >
-                <View style={styles.backdrop}>
+                <View style={styles.backdrop} accessibilityViewIsModal>
                     <View
                         style={[
                             styles.card,
@@ -88,8 +91,9 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                                 const isCancel = button.style === 'cancel';
                                 const filled = !isCancel;
                                 return (
-                                    <Pressable
+                                    <ScalePressable
                                         key={index}
+                                        accessibilityRole="button"
                                         onPress={() => handlePress(button)}
                                         style={[
                                             styles.button,
@@ -119,7 +123,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                                         >
                                             {button.text}
                                         </Text>
-                                    </Pressable>
+                                    </ScalePressable>
                                 );
                             })}
                         </View>
@@ -147,12 +151,17 @@ const styles = StyleSheet.create({
     card: {
         width: '100%',
         maxWidth: 360,
-        borderRadius: 16,
+        borderRadius: 22,
         borderWidth: 1,
-        padding: 20,
-        gap: 8,
+        padding: 22,
+        gap: 10,
+        elevation: 12,
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 8 },
     },
-    title: { fontSize: 18, fontWeight: '700' },
+    title: { fontSize: 17, fontFamily: headingFont },
     message: { fontSize: 14, lineHeight: 20 },
     actions: { gap: 8, marginTop: 12 },
     button: {

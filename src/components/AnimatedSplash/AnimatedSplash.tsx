@@ -1,7 +1,8 @@
+import { Text } from '@/components/Typography/Typography';
 // src/components/AnimatedSplash/AnimatedSplash.tsx
 import { darkTheme, lightTheme } from '@/theme/colors';
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, useColorScheme } from 'react-native';
+import { Image, StyleSheet, useColorScheme } from 'react-native';
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -32,7 +33,7 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
     const isLight = useColorScheme() === 'light';
     const palette = isLight ? lightTheme : darkTheme;
     const [minDone, setMinDone] = useState(false);
-    const [leaving, setLeaving] = useState(false);
+    const leaving = minDone && ready;
 
     const lift = useSharedValue(0);
     const title = useSharedValue(0);
@@ -58,12 +59,11 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
     }, [lift, title]);
 
     useEffect(() => {
-        if (!minDone || !ready) return;
-        setLeaving(true);
+        if (!leaving) return;
         opacity.value = withTiming(0, { duration: FADE_OUT });
         const timer = setTimeout(onFinish, FADE_OUT);
         return () => clearTimeout(timer);
-    }, [minDone, ready, onFinish, opacity]);
+    }, [leaving, onFinish, opacity]);
 
     const barStyle = useAnimatedStyle(() => ({
         transform: [

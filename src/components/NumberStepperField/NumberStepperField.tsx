@@ -1,8 +1,9 @@
+import { Text, TextInput } from '@/components/Typography/Typography';
 // src/components/NumberStepperField/NumberStepperField.tsx
 import type { ThemeColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 interface Props {
     label: string;
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
         height: 48,
         fontSize: 18,
         fontWeight: '600',
+        fontVariant: ['tabular-nums'],
         textAlign: 'center',
         paddingVertical: 0,
     },

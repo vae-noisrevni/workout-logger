@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { Text } from '@/components/Typography/Typography';
+import { View } from 'react-native';
 import type { ThemeColors } from '@/theme/colors';
 import type { MonthCount } from '@/utils/stats';
 import { monthShortLabel } from '@/utils/date';

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
@@ -45,14 +46,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         })();
     }, []);
 
-    const setMode = (next: ThemeMode) => {
+    const setMode = useCallback((next: ThemeMode) => {
         setModeState(next);
         AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
-    };
+    }, []);
 
-    const toggle = () => {
+    const toggle = useCallback(() => {
         setMode(mode === 'dark' ? 'light' : 'dark');
-    };
+    }, [mode, setMode]);
 
     const colors = useMemo<ThemeColors>(() => {
         const effective = mode === 'system' ? (systemScheme ?? 'dark') : mode;
@@ -61,7 +62,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const value = useMemo(
         () => ({ colors, mode, setMode, toggle }),
-        [colors, mode],
+        [colors, mode, setMode, toggle],
     );
 
     return (

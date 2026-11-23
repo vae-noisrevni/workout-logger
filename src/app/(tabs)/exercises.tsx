@@ -1,3 +1,5 @@
+import { Text } from '@/components/Typography/Typography';
+import { ListSearchHeader } from '@/components/ListSearchHeader/ListSearchHeader';
 import { FlatList } from 'react-native-gesture-handler';
 import { ExerciseForm } from '@/components/ExerciseForm/ExerciseForm';
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
@@ -7,14 +9,12 @@ import { useTheme } from '@/theme/ThemeContext';
 import { Exercise } from '@/types/exercise';
 import { exportExercises, parseExercises } from '@/utils/exerciseTransfer';
 import { pickTextFile, type TransferFormat } from '@/utils/fileTransfer';
-import BottomSheet from '@expo/ui/community/bottom-sheet';
+import { BottomSheet } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
 import {
     Pressable,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from 'react-native';
 
@@ -105,55 +105,11 @@ export default function ExercisesScreen() {
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
         >
-            {/* Поиск */}
-            <View
-                style={[
-                    styles.searchRow,
-                    {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                    },
-                ]}
-            >
-                <Ionicons
-                    name="search"
-                    size={20}
-                    color={colors.textSecondary}
-                />
-                <TextInput
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Поиск упражнений..."
-                    placeholderTextColor={colors.textSecondary}
-                    style={[styles.searchInput, { color: colors.textPrimary }]}
-                />
-            </View>
-
-            {/* Импорт / экспорт */}
-            <View style={styles.transferRow}>
-                {(
-                    [
-                        ['download-outline', 'Экспорт', handleExportPress],
-                        ['push-outline', 'Импорт', handleImportPress],
-                    ] as const
-                ).map(([icon, label, onPress]) => (
-                    <Pressable
-                        key={label}
-                        onPress={onPress}
-                        style={[
-                            styles.transferBtn,
-                            { borderColor: colors.accent },
-                        ]}
-                    >
-                        <Ionicons name={icon} size={18} color={colors.accent} />
-                        <Text
-                            style={{ color: colors.accent, fontWeight: '600' }}
-                        >
-                            {label}
-                        </Text>
-                    </Pressable>
-                ))}
-            </View>
+            <ListSearchHeader search={search} onSearchChange={setSearch}
+                placeholder="Поиск упражнений" actions={[
+                    { id: 'import', icon: 'arrow-down-outline', title: 'Импорт', onPress: handleImportPress },
+                    { id: 'export', icon: 'arrow-up-outline', title: 'Экспорт', onPress: handleExportPress },
+                ]} />
 
             {/* Кнопка добавления */}
             <Pressable
@@ -186,6 +142,7 @@ export default function ExercisesScreen() {
                 <FlatList
                     data={exercises}
                     keyExtractor={(item) => String(item.id)}
+                    keyboardShouldPersistTaps="handled"
                     contentContainerStyle={styles.listContent}
                     renderItem={({ item }) => (
                         <ExerciseRow
@@ -229,36 +186,7 @@ export default function ExercisesScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 12,
-    },
-    transferRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
-    transferBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        height: 40,
-        borderRadius: 12,
-        borderWidth: 1.5,
-    },
-    searchRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 16,
-        paddingVertical: 0,
-    },
+    container: { flex: 1 },
     addButton: {
         position: 'absolute',
         right: 20,
@@ -276,6 +204,7 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     listContent: {
+        paddingHorizontal: 16,
         paddingTop: 16,
         paddingBottom: 120,
     },

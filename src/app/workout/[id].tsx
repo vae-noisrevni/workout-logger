@@ -1,3 +1,5 @@
+import { headingFont } from '@/theme/typography';
+import { Text } from '@/components/Typography/Typography';
 import { WeightValue } from '@/components/WeightValue/WeightValue';
 // src/app/workout/[id].tsx — просмотр тренировки из истории (только чтение)
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
@@ -13,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function WorkoutPreviewScreen() {
     const colors = useTheme();
@@ -71,6 +73,7 @@ export default function WorkoutPreviewScreen() {
         title: workout?.name ?? 'Тренировка',
         headerBackTitle: 'История',
         headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: { fontFamily: headingFont, fontSize: 17 },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
         headerTransparent: false,

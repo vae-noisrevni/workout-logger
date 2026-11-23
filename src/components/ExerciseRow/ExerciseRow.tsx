@@ -1,10 +1,12 @@
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/ExerciseRow/ExerciseRow.tsx
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
 import type { Exercise } from '@/types/exercise';
 import { EXERCISE_TYPE_LABELS } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 interface Props {
@@ -84,11 +86,12 @@ export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavor
                     </View>
                 </View>
 
-                <Pressable onPress={(event) => { event.stopPropagation(); onToggleFavorite(); }} hitSlop={10} accessibilityLabel={exercise.is_favorite ? 'Убрать из избранного' : 'Добавить в избранное'} style={{ padding: 12 }}>
-                    <Ionicons name={exercise.is_favorite ? 'star' : 'star-outline'} size={24} color={colors.accent} />
-                </Pressable>
+                <ScalePressable pressedScale={0.82} accessibilityRole="button" onPress={(event) => { event.stopPropagation(); onToggleFavorite(); }} hitSlop={10} accessibilityLabel={exercise.is_favorite ? 'Убрать из избранного' : 'Добавить в избранное'} style={{ padding: 12 }}>
+                    <Ionicons name={exercise.is_favorite ? 'heart' : 'heart-outline'} size={24} color={colors.favorite} />
+                </ScalePressable>
                 <Ionicons
                     name="chevron-forward"
+                    style={styles.chevron}
                     size={20}
                     color={colors.textSecondary}
                 />
@@ -106,6 +109,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         overflow: 'hidden',
     },
+    chevron: { marginRight: 14 },
     colorBar: { width: 5, alignSelf: 'stretch' },
     body: { flex: 1, padding: 14, gap: 6 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

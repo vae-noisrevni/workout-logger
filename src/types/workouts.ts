@@ -50,11 +50,11 @@ export interface CreateWorkoutInput {
     name: string;
     date: string; // ISO
     comment: string;
-    exercises: Array<{
+    exercises: {
         exercise_id: number;
         comment?: string;
-        sets: Array<{ reps: number; weight: number }>;
-    }>;
+        sets: { reps: number; weight: number }[];
+    }[];
 }
 
 // ─── Распарсенная тренировка из файла импорта ──────────────────────
@@ -63,9 +63,9 @@ export interface ImportedWorkout {
     name: string;
     date: string; // ISO
     comment: string;
-    exercises: Array<{
+    exercises: {
         name: string;
         comment: string;
-        sets: Array<{ reps: number; weight: number }>;
-    }>;
+        sets: { reps: number; weight: number }[];
+    }[];
 }

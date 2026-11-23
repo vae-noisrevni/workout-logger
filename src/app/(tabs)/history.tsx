@@ -1,3 +1,5 @@
+import { Text } from '@/components/Typography/Typography';
+import { ListSearchHeader } from '@/components/ListSearchHeader/ListSearchHeader';
 import { FlatList } from 'react-native-gesture-handler';
 // src/app/(tabs)/history.tsx
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
@@ -13,7 +15,7 @@ import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 import type { Workout } from '@/types/workouts';
@@ -145,30 +147,11 @@ export default function HistoryScreen() {
         <View
             style={[styles.container, { backgroundColor: colors.background }]}
         >
-            <View style={[
-                styles.searchRow,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}>
-                <Ionicons name="search" size={20} color={colors.textSecondary} />
-                <TextInput
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Поиск по упражнению..."
-                    accessibilityLabel="Поиск по упражнению в истории"
-                    placeholderTextColor={colors.textSecondary}
-                    autoCorrect={false}
-                    style={[styles.searchInput, { color: colors.textPrimary }]}
-                />
-                {search.length > 0 && (
-                    <Pressable
-                        onPress={() => setSearch('')}
-                        accessibilityLabel="Очистить поиск"
-                        hitSlop={10}
-                    >
-                        <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
-                    </Pressable>
-                )}
-            </View>
+            <ListSearchHeader search={search} onSearchChange={setSearch}
+                placeholder="Поиск по упражнению" actions={[
+                    { id: 'import', icon: 'arrow-down-outline', title: 'Импорт', onPress: handleImportPress },
+                    { id: 'export', icon: 'arrow-up-outline', title: 'Экспорт', onPress: handleExportPress, disabled: workouts.length === 0 },
+                ]} />
             <FlatList
                 data={results}
                 keyExtractor={({ workout }) => String(workout.id)}
@@ -180,56 +163,6 @@ export default function HistoryScreen() {
                     >
                         {workouts.length === 0 ? 'История пока пуста' : 'Ничего не найдено'}
                     </Text>
-                }
-                ListHeaderComponent={
-                    <View style={styles.transferRow}>
-                        <Pressable
-                            onPress={handleExportPress}
-                            disabled={workouts.length === 0}
-                            style={[
-                                styles.exportBtn,
-                                {
-                                    borderColor: colors.accent,
-                                    opacity: workouts.length === 0 ? 0.4 : 1,
-                                },
-                            ]}
-                        >
-                            <Ionicons
-                                name="download-outline"
-                                size={20}
-                                color={colors.accent}
-                            />
-                            <Text
-                                style={{
-                                    color: colors.accent,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                Экспорт
-                            </Text>
-                        </Pressable>
-                        <Pressable
-                            onPress={handleImportPress}
-                            style={[
-                                styles.exportBtn,
-                                { borderColor: colors.accent },
-                            ]}
-                        >
-                            <Ionicons
-                                name="push-outline"
-                                size={20}
-                                color={colors.accent}
-                            />
-                            <Text
-                                style={{
-                                    color: colors.accent,
-                                    fontWeight: '600',
-                                }}
-                            >
-                                Импорт
-                            </Text>
-                        </Pressable>
-                    </View>
                 }
                 renderItem={({ item: { workout: item, matchingNames } }) => {
                     const setsCount = item.exercises.reduce(
@@ -296,32 +229,9 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    searchRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginHorizontal: 16,
-        marginTop: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    searchInput: { flex: 1, fontSize: 16, paddingVertical: 0 },
     center: { alignItems: 'center', justifyContent: 'center' },
     list: { padding: 16, gap: 10 },
-    transferRow: { flexDirection: 'row', gap: 10, marginBottom: 6 },
     empty: { textAlign: 'center', marginTop: 40 },
-    exportBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        height: 48,
-        borderRadius: 12,
-        borderWidth: 1.5,
-    },
     card: { padding: 14, borderRadius: 14, borderWidth: 1, gap: 6 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     name: { flex: 1, fontSize: 16, fontWeight: '600' },

@@ -1,7 +1,8 @@
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/FinishFab/FinishFab.tsx
 import type { ThemeColors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 interface Props {
     colors: ThemeColors;
@@ -11,13 +12,16 @@ interface Props {
 
 export function FinishFab({ colors, onPress, disabled = false }: Props) {
     return (
-        <Pressable
+        <ScalePressable
             onPress={onPress}
-            style={({ pressed }) => [
+            disabled={disabled}
+            accessibilityRole="button"
+            accessibilityLabel="Завершить тренировку"
+            style={[
                 styles.fab,
                 {
                     backgroundColor: colors.accent,
-                    opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
+                    opacity: disabled ? 0.4 : 1,
                 },
             ]}
             hitSlop={8}
@@ -27,7 +31,7 @@ export function FinishFab({ colors, onPress, disabled = false }: Props) {
                 size={26}
                 color={colors.textInverse}
             />
-        </Pressable>
+        </ScalePressable>
     );
 }
 

@@ -13,12 +13,14 @@ export interface ThemeColors {
     accent: string;
     accentPressed: string;
     accentMuted: string;
+    accentTint: string;
 
     // Границы
     border: string;
     borderFocused: string;
 
     // Семантические
+    favorite: string;
     danger: string;
     success: string;
 }
@@ -35,10 +37,12 @@ export const darkTheme: ThemeColors = {
     accent: '#0047AB', // кобальт
     accentPressed: '#003580',
     accentMuted: '#003366',
+    accentTint: '#1E3556',
 
     border: '#2c2c2e',
     borderFocused: '#0047AB',
 
+    favorite: '#ff78a6',
     danger: '#ff453a',
     success: '#30d158',
 };
@@ -55,10 +59,12 @@ export const lightTheme: ThemeColors = {
     accent: '#800020', // бургунди
     accentPressed: '#5c0018',
     accentMuted: '#a3334a',
+    accentTint: '#E5CED0',
 
     border: '#E8E0D5',
     borderFocused: '#800020',
 
+    favorite: '#b91e5e',
     danger: '#c62828',
     success: '#2e7d32',
 };

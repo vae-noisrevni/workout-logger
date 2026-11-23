@@ -1,3 +1,4 @@
+import { Text } from '@/components/Typography/Typography';
 import type { ReactNode } from 'react';
 import { WeightValue } from '@/components/WeightValue/WeightValue';
 // src/components/WorkoutCard/WorkoutCard.tsx
@@ -5,7 +6,7 @@ import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
 import { ResolvedDraftExercise } from '@/utils/resolveDraft';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 interface Props {
     exercise: ResolvedDraftExercise;

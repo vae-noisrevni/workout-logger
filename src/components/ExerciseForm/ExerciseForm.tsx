@@ -1,3 +1,7 @@
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
+import { Field } from '@/components/ScreenControls/ScreenControls';
+import { headingFont } from '@/theme/typography';
 // src/components/ExerciseForm/ExerciseForm.tsx
 import {
     DEFAULT_EXERCISE_COLOR,
@@ -14,11 +18,8 @@ import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
-    Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from 'react-native';
 
@@ -51,21 +52,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                 {mode.type === 'create' ? 'Новое упражнение' : 'Редактировать'}
             </Text>
 
-            <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Название упражнения"
-                placeholderTextColor={colors.textSecondary}
-                style={[
-                    styles.input,
-                    {
-                        color: colors.textPrimary,
-                        borderColor: colors.border,
-                        backgroundColor: colors.surface,
-                    },
-                ]}
-                autoFocus
-            />
+            <Field label="Название упражнения" value={name} onChangeText={setName} autoFocus />
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>
                 Тип
@@ -73,7 +60,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
             <View style={styles.typeRow}>
                 {(Object.keys(EXERCISE_TYPE_LABELS) as ExerciseType[]).map(
                     (t) => (
-                        <Pressable
+                        <ScalePressable
                             key={t}
                             onPress={() => setType(t)}
                             style={[
@@ -101,7 +88,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                             >
                                 {EXERCISE_TYPE_LABELS[t]}
                             </Text>
-                        </Pressable>
+                        </ScalePressable>
                     ),
                 )}
             </View>
@@ -117,7 +104,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                 {EXERCISE_COLORS.map((c) => {
                     const selected = c === color;
                     return (
-                        <Pressable
+                        <ScalePressable
                             key={c}
                             onPress={() => setColor(c)}
                             style={[
@@ -138,37 +125,20 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                                     color="#151517"
                                 />
                             )}
-                        </Pressable>
+                        </ScalePressable>
                     );
                 })}
             </ScrollView>
 
-            <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Описание
-            </Text>
-            <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Ссылка на видео или текстовое описание"
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                style={[
-                    styles.input,
-                    styles.textarea,
-                    {
-                        color: colors.textPrimary,
-                        borderColor: colors.border,
-                        backgroundColor: colors.surface,
-                    },
-                ]}
-            />
+            <Field label="Описание" value={description} onChangeText={setDescription}
+                placeholder="Ссылка на видео или текстовое описание" multiline />
 
-            <Pressable onPress={() => setIsFavorite(!isFavorite)} accessibilityRole="checkbox" accessibilityState={{ checked: isFavorite }} style={styles.typeRow}>
-                <Ionicons name={isFavorite ? 'star' : 'star-outline'} size={24} color={colors.accent} />
+            <ScalePressable pressedScale={0.90} onPress={() => setIsFavorite(!isFavorite)} accessibilityRole="checkbox" accessibilityState={{ checked: isFavorite }} style={styles.typeRow}>
+                <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={colors.favorite} />
                 <Text style={{ color: colors.textPrimary }}>Избранное</Text>
-            </Pressable>
+            </ScalePressable>
             <View style={styles.actions}>
-                <Pressable
+                <ScalePressable
                     onPress={onCancel}
                     style={[
                         styles.button,
@@ -180,8 +150,8 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                     ]}
                 >
                     <Text style={{ color: colors.textPrimary }}>Отмена</Text>
-                </Pressable>
-                <Pressable
+                </ScalePressable>
+                <ScalePressable
                     onPress={() =>
                         isValid &&
                         onSubmit({
@@ -207,7 +177,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                     >
                         Сохранить
                     </Text>
-                </Pressable>
+                </ScalePressable>
             </View>
         </BottomSheetScrollView>
     );
@@ -215,10 +185,8 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
 
 const styles = StyleSheet.create({
     form: { padding: 24, gap: 12 },
-    title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
+    title: { fontSize: 21, fontFamily: headingFont, marginBottom: 8 },
     label: { fontSize: 13, marginTop: 8, marginBottom: 4 },
-    input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
-    textarea: { minHeight: 80, textAlignVertical: 'top' },
     typeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     typeChip: {
         paddingHorizontal: 14,
@@ -236,5 +204,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-    button: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
+    button: { flex: 1, minHeight: 48, padding: 12, borderRadius: 14, alignItems: 'center' },
 });

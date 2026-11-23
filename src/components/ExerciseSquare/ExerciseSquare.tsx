@@ -1,9 +1,11 @@
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/ExerciseSquare/ExerciseSquare.tsx
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
 import type { ThemeColors } from '@/theme/colors';
 import type { Exercise } from '@/types/exercise';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface Props {
     exercise: Exercise;
@@ -13,15 +15,11 @@ interface Props {
 
 export function ExerciseSquare({ exercise, onPress }: Props) {
     return (
-        <Pressable
+        <ScalePressable
             onPress={() => onPress(exercise)}
-            style={({ pressed }) => [
-                styles.square,
-                {
-                    backgroundColor: exercise.color,
-                    opacity: pressed ? 0.7 : 1,
-                },
-            ]}
+            accessibilityRole="button"
+            pressedScale={0.94}
+            style={[styles.square, { backgroundColor: exercise.color }]}
         >
             <>
                 <View style={styles.iconWrap}>
@@ -35,7 +33,7 @@ export function ExerciseSquare({ exercise, onPress }: Props) {
                     {exercise.name}
                 </Text>
             </>
-        </Pressable>
+        </ScalePressable>
     );
 }
 

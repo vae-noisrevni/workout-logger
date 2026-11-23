@@ -1,7 +1,12 @@
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
+import { ListSearchHeader } from '@/components/ListSearchHeader/ListSearchHeader';
+import { Checkbox, Host } from '@expo/ui';
+import { PresetExerciseList } from '@/components/PresetExerciseList/PresetExerciseList';
 import { usePresets } from '@/hooks/usePresets';
 import { PresetEditor } from '@/components/PresetEditor/PresetEditor';
 import { ThemeSheet } from '@/components/ThemeSheet/ThemeSheet';
-import { Action } from '@/components/ScreenControls/ScreenControls';
+import { Action, Heading } from '@/components/ScreenControls/ScreenControls';
 import { exercisesForSave } from '@/utils/draft';
 import type { WorkoutPreset } from '@/types/presets';
 // src/app/(tabs)/index.tsx
@@ -18,7 +23,7 @@ import { WorkoutDropZone } from '@/components/WorkoutDropZone/WorkoutDropZone';
 import { useWorkoutWrites } from '@/hooks/useDataQueries';
 import { useExercises } from '@/hooks/useExercises';
 import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
-import { useTheme } from '@/theme/ThemeContext';
+import { useTheme, useThemeMode } from '@/theme/ThemeContext';
 import type { Exercise } from '@/types/exercise';
 import { resolveDraft, type ResolvedDraftExercise } from '@/utils/resolveDraft';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,13 +33,12 @@ import {
     ScrollView,
     Pressable,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from 'react-native';
 
 export default function WorkoutScreen() {
     const colors = useTheme();
+    const { mode } = useThemeMode();
     const { exercises, allExercises } = useExercises();
     const { presets, error: presetsError } = usePresets();
     const [presetSheet, setPresetSheet] = useState<'pick' | 'create' | null>(null);
@@ -171,14 +175,15 @@ export default function WorkoutScreen() {
             {draft.storageError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{draft.storageError}</Text>}
             {!draft.hydrated && draft.storageError && <Action title="Повторить загрузку черновика" onPress={draft.retryRestore} />}
             {presetsError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{presetsError}</Text>}
-            <View style={styles.actions}>
-                <Action grow title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => { setWithoutSets(true); setPresetSheet('pick'); }} />
-                <Action grow title="Сохранить как пресет" disabled={!draft.hydrated || !resolvedDraft.length} onPress={() => setPresetSheet('create')} />
-                {draft.hydrated && !draft.editing && draft.draft.length > 0 &&
-                    <Action title="Очистить текущую тренировку" icon="trash-outline" danger
-                        onPress={() => dialog.show({ title: 'Очистить черновик?', message: 'Несохранённая тренировка будет удалена.', buttons: [{ text: 'Отмена', style: 'cancel' }, { text: 'Очистить', style: 'destructive', onPress: draft.reset }] })} />}
-            </View>
-            {draft.origin && <Text style={{ color: colors.textSecondary, marginHorizontal: 16, marginBottom: 8 }}>Пресет: {draft.origin.preset_name}</Text>}
+            <ListSearchHeader search={search} onSearchChange={setSearch} placeholder="Поиск упражнений" actions={[
+                { id: 'choose', icon: 'list-outline', title: 'Выбрать пресет', disabled: !draft.hydrated, onPress: () => { setWithoutSets(true); setPresetSheet('pick'); } },
+                { id: 'save', icon: 'bookmark-outline', title: 'Сохранить как пресет', disabled: !draft.hydrated || !resolvedDraft.length, onPress: () => setPresetSheet('create') },
+                ...(draft.hydrated && !draft.editing && draft.draft.length > 0 ? [{
+                    id: 'clear', icon: 'trash-outline' as const, title: 'Очистить тренировку', destructive: true,
+                    onPress: () => dialog.show({ title: 'Очистить черновик?', message: 'Несохранённая тренировка будет удалена.', buttons: [{ text: 'Отмена', style: 'cancel' }, { text: 'Очистить', style: 'destructive', onPress: draft.reset }] }),
+                }] : []),
+            ]} />
+            {draft.origin && <Text style={{ color: colors.textSecondary, marginHorizontal: 16, marginTop: 8 }}>Пресет: {draft.origin.preset_name}</Text>}
             {draft.editing && (
                 <View
                     style={[
@@ -212,29 +217,6 @@ export default function WorkoutScreen() {
                     </Pressable>
                 </View>
             )}
-            <View
-                style={[
-                    styles.searchRow,
-                    {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                    },
-                ]}
-            >
-                <Ionicons
-                    name="search"
-                    size={20}
-                    color={colors.textSecondary}
-                />
-                <TextInput
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Поиск упражнений..."
-                    placeholderTextColor={colors.textSecondary}
-                    style={[styles.searchInput, { color: colors.textPrimary }]}
-                />
-            </View>
-
             <ScrollView
                 horizontal
                 style={styles.squares}
@@ -274,17 +256,19 @@ export default function WorkoutScreen() {
                 onReplaceSets={draft.replaceSets}
             />
 
-            {presetSheet && <ThemeSheet onClose={() => setPresetSheet(null)}>
+            {presetSheet && <ThemeSheet scroll={presetSheet !== 'create'} onClose={() => setPresetSheet(null)}>
                 {presetSheet === 'create' ? <PresetEditor initialExercises={resolvedDraft.map((exercise) => ({ exercise_id: exercise.exercise_id, sets: exercise.sets }))} onSaved={() => setPresetSheet(null)} onCancel={() => setPresetSheet(null)} />
                     : <>
-                        <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>Выбрать пресет</Text>
-                        <Action title={`${withoutSets ? '☑' : '☐'} Без подходов`} onPress={() => setWithoutSets(!withoutSets)} />
+                        <Heading>Выбрать пресет</Heading>
+                        <Host matchContents colorScheme={mode === 'system' ? undefined : mode}>
+                            <Checkbox label="Без подходов" value={withoutSets} onValueChange={setWithoutSets} />
+                        </Host>
                         {presets.map((preset) => (
-                            <Pressable key={preset.id} accessibilityRole="button" disabled={!preset.exercises.length}
+                            <ScalePressable key={preset.id} accessibilityRole="button" disabled={!preset.exercises.length}
                                 accessibilityLabel={preset.name} onPress={() => choosePreset(preset)}
-                                style={({ pressed }) => [styles.presetCard, {
+                                style={[styles.presetCard, {
                                     backgroundColor: colors.surface, borderColor: colors.border,
-                                    opacity: pressed || !preset.exercises.length ? 0.6 : 1,
+                                    opacity: !preset.exercises.length ? 0.6 : 1,
                                 }]}>
                                 <View style={styles.presetTitle}>
                                     <Text style={{ flex: 1, color: colors.textPrimary, fontSize: 17, fontWeight: '700' }}>
@@ -292,16 +276,8 @@ export default function WorkoutScreen() {
                                     </Text>
                                     <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
                                 </View>
-                                {preset.exercises.map(({ exercise_id, sets }) => {
-                                    const exercise = exercisesById.get(exercise_id);
-                                    return <View key={exercise_id} style={styles.presetExercise}>
-                                        <View style={[styles.exerciseDot, { backgroundColor: exercise?.color ?? colors.border }]} />
-                                        <Text style={{ flex: 1, color: colors.textPrimary }}>{exercise?.name ?? 'Упражнение недоступно'}</Text>
-                                        {!withoutSets && <Text style={{ color: colors.textSecondary }}>{sets.length} подх.</Text>}
-                                    </View>;
-                                })}
-                                {!preset.exercises.length && <Text style={{ color: colors.textSecondary }}>Нет упражнений</Text>}
-                            </Pressable>
+                                <PresetExerciseList plan={preset.exercises} exercisesById={exercisesById} showSets={!withoutSets} />
+                            </ScalePressable>
                         ))}
                         {!presets.length && <Text style={{ color: colors.textSecondary }}>Создайте пресет на вкладке «Пресеты»</Text>}
                     </>}
@@ -319,35 +295,21 @@ export default function WorkoutScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingTop: 12 },
-    actions: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 10 },
+    container: { flex: 1 },
     presetCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 8 },
     presetTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    presetExercise: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    exerciseDot: { width: 8, height: 8, borderRadius: 4 },
     editBanner: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
         marginHorizontal: 16,
-        marginBottom: 10,
+        marginTop: 8,
         paddingHorizontal: 12,
         paddingVertical: 10,
         borderRadius: 12,
         borderWidth: 1,
     },
     editTitle: { flex: 1, fontSize: 14, fontWeight: '600' },
-    searchRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginHorizontal: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    searchInput: { flex: 1, fontSize: 16, paddingVertical: 0 },
     // Без flexGrow: 0 лента растягивается и отнимает место у области тренировки
     squares: { flexGrow: 0 },
     squaresRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 10 },

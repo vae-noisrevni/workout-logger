@@ -1,3 +1,6 @@
+import { Text } from '@/components/Typography/Typography';
+import { useFonts } from 'expo-font';
+import { bodyFonts, headingFont } from '@/theme/typography';
 import { DataQueryProvider } from '@/query/client';
 // src/app/_layout.tsx
 import { AnimatedSplash } from '@/components/AnimatedSplash/AnimatedSplash';
@@ -7,8 +10,8 @@ import { WorkoutDraftProvider } from '@/context/WorkoutDraftContext';
 import { initializeDatabase } from '@/db/init';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { SplashScreen, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,9 +19,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+    const [fontsLoaded, fontError] = useFonts({
+        [headingFont]: require('../../assets/fonts/Unbounded.ttf'),
+        [bodyFonts.regular]: require('../../assets/fonts/Onest_400Regular.ttf'),
+        [bodyFonts.medium]: require('../../assets/fonts/Onest_500Medium.ttf'),
+        [bodyFonts.semibold]: require('../../assets/fonts/Onest_600SemiBold.ttf'),
+        [bodyFonts.bold]: require('../../assets/fonts/Onest_700Bold.ttf'),
+    });
     const [dbReady, setDbReady] = useState(false);
     const [dbError, setDbError] = useState<string | null>(null);
     const [splashDone, setSplashDone] = useState(false);
+    const finishSplash = useCallback(() => setSplashDone(true), []);
 
     useEffect(() => {
         initializeDatabase()
@@ -28,6 +39,7 @@ export default function RootLayout() {
             );
     }, []);
 
+    const fontsReady = fontsLoaded || fontError !== null;
     const content = dbError ? (
         <View
             style={{
@@ -38,7 +50,7 @@ export default function RootLayout() {
         >
             <Text>Ошибка БД: {dbError}</Text>
         </View>
-    ) : dbReady ? (
+    ) : dbReady && fontsReady ? (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>
                 <ThemeProvider>
@@ -62,8 +74,8 @@ export default function RootLayout() {
             {content}
             {!splashDone && (
                 <AnimatedSplash
-                    ready={dbReady || dbError !== null}
-                    onFinish={() => setSplashDone(true)}
+                    ready={(dbReady && fontsReady) || dbError !== null}
+                    onFinish={finishSplash}
                 />
             )}
         </View>

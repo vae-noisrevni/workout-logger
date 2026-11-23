@@ -1,10 +1,9 @@
 import { SymbolView } from 'expo-symbols';
 import { PropsWithChildren, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Text } from '@/components/Typography/Typography';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/theme/ThemeContext';
 
@@ -16,7 +15,7 @@ export function Collapsible({
     const theme = useTheme();
 
     return (
-        <ThemedView>
+        <View>
             <Pressable
                 style={({ pressed }) => [
                     styles.heading,
@@ -24,7 +23,7 @@ export function Collapsible({
                 ]}
                 onPress={() => setIsOpen((value) => !value)}
             >
-                <ThemedView type="backgroundElement" style={styles.button}>
+                <View style={[styles.button, { backgroundColor: theme.surfaceElevated }]}>
                     <SymbolView
                         name={{
                             ios: 'chevron.right',
@@ -40,18 +39,18 @@ export function Collapsible({
                             ],
                         }}
                     />
-                </ThemedView>
+                </View>
 
-                <ThemedText type="small">{title}</ThemedText>
+                <Text style={{ fontSize: 14, color: theme.textPrimary }}>{title}</Text>
             </Pressable>
             {isOpen && (
                 <Animated.View entering={FadeIn.duration(200)}>
-                    <ThemedView type="backgroundElement" style={styles.content}>
+                    <View style={[styles.content, { backgroundColor: theme.surfaceElevated }]}>
                         {children}
-                    </ThemedView>
+                    </View>
                 </Animated.View>
             )}
-        </ThemedView>
+        </View>
     );
 }
 

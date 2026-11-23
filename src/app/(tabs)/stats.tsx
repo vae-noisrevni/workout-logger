@@ -1,8 +1,10 @@
+import { bodyFonts } from '@/theme/typography';
+import { Text } from '@/components/Typography/Typography';
 import {TransferControls} from '@/components/TransferControls/TransferControls';
 import { Heading, Panel } from '@/components/ScreenControls/ScreenControls';
 import { MonthlyActivity } from '@/components/MonthlyActivity/MonthlyActivity';
 import { BodyWeightLog } from '@/components/BodyWeightLog/BodyWeightLog';
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import { useTheme } from '@/theme/ThemeContext';
 import { useStats } from '@/hooks/useStats';
@@ -17,8 +19,8 @@ export default function StatsScreen() {
         <BodyWeightLog />
         {error && <Text style={{ color: colors.danger }}>{error}</Text>}
         <Heading>Избранное</Heading>
-        {!favorites.length && <Link href="/exercises" style={{ color: colors.accent }}>Отметьте упражнения звёздочкой на вкладке «Упражнения»</Link>}
-        {!!favorites.length && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+        {!favorites.length && <Link href="/exercises" style={{ color: colors.accent, fontFamily: bodyFonts.regular }}>Отметьте упражнения сердечком на вкладке «Упражнения»</Link>}
+        {!!favorites.length && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'stretch', gap: 12 }}>
             {favorites.map((stat) => <View key={stat.exercise.id} style={{ width: Math.min(296, width - 64) }}>
                 <FavoriteStatCard {...stat} colors={colors} />
             </View>)}

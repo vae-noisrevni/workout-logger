@@ -1,3 +1,7 @@
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
+import { Field } from "@/components/ScreenControls/ScreenControls";
+import { headingFont } from "@/theme/typography";
 import { DateField } from '@/components/DateField/DateField';
 // src/components/FinishWorkoutSheet/FinishWorkoutSheet.tsx
 import type { ThemeColors } from "@/theme/colors";
@@ -8,12 +12,13 @@ import {
   todayInputDate,
   yesterdayInputDate,
 } from "@/utils/date";
-import BottomSheet, {
+import {
+  BottomSheet,
   BottomSheetScrollView,
 } from "@expo/ui/community/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export interface FinishWorkoutSheetRef {
   open: () => void;
@@ -94,29 +99,8 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
             в тренировке
           </Text>
 
-          {/* Название */}
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            Название
-          </Text>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Например, День груди"
-            placeholderTextColor={colors.textSecondary}
-            style={[
-              styles.input,
-              {
-                color: colors.textPrimary,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
-          />
+          <Field label="Название" value={name} onChangeText={setName} placeholder="Например, День груди" />
 
-          {/* Дата */}
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            Дата
-          </Text>
           <DateField
             label="Дата тренировки"
             value={dateInput}
@@ -124,18 +108,8 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               setDateInput(v);
               setDateError(null);
             }}
-            placeholderTextColor={colors.textSecondary}
             autoCapitalize="none"
             autoCorrect={false}
-            keyboardType="numbers-and-punctuation"
-            style={[
-              styles.input,
-              {
-                color: colors.textPrimary,
-                borderColor: dateError ? colors.danger : colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
           />
           {dateError && (
             <Text style={[styles.error, { color: colors.danger }]}>
@@ -145,7 +119,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
 
           {/* Быстрые кнопки даты */}
           <View style={styles.dateShortcuts}>
-            <Pressable
+            <ScalePressable
               onPress={() => {
                 setDateInput(todayInputDate());
                 setDateError(null);
@@ -166,8 +140,8 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               >
                 Сегодня
               </Text>
-            </Pressable>
-            <Pressable
+            </ScalePressable>
+            <ScalePressable
               onPress={() => {
                 setDateInput(yesterdayInputDate());
                 setDateError(null);
@@ -188,33 +162,15 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               >
                 Вчера
               </Text>
-            </Pressable>
+            </ScalePressable>
           </View>
 
-          {/* Комментарий */}
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            Комментарий (необязательно)
-          </Text>
-          <TextInput
-            value={comment}
-            onChangeText={setComment}
-            placeholder="Ощущения, замечания, что улучшить"
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            style={[
-              styles.input,
-              styles.textarea,
-              {
-                color: colors.textPrimary,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              },
-            ]}
-          />
+          <Field label="Комментарий (необязательно)" value={comment} onChangeText={setComment}
+            placeholder="Ощущения, замечания, что улучшить" multiline />
 
           {/* Кнопки */}
           <View style={styles.actions}>
-            <Pressable
+            <ScalePressable
               onPress={() => sheetRef.current?.close()}
               style={[
                 styles.button,
@@ -226,8 +182,8 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               ]}
             >
               <Text style={{ color: colors.textPrimary }}>Отмена</Text>
-            </Pressable>
-            <Pressable
+            </ScalePressable>
+            <ScalePressable
               onPress={handleConfirm}
               disabled={!canConfirm || pending}
               style={[
@@ -251,7 +207,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               >
                 {initial ? "Сохранить" : "Завершить"}
               </Text>
-            </Pressable>
+            </ScalePressable>
           </View>
         </BottomSheetScrollView>
       </BottomSheet>
@@ -263,11 +219,8 @@ FinishWorkoutSheet.displayName = "FinishWorkoutSheet";
 
 const styles = StyleSheet.create({
   content: { padding: 24, gap: 6 },
-  title: { fontSize: 24, fontWeight: "700" },
+  title: { fontSize: 21, fontFamily: headingFont },
   subtitle: { fontSize: 13, marginBottom: 12 },
-  label: { fontSize: 13, marginTop: 12, marginBottom: 4 },
-  input: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 16 },
-  textarea: { minHeight: 100, textAlignVertical: "top" },
   error: { fontSize: 12, marginTop: 4 },
   dateShortcuts: { flexDirection: "row", gap: 8, marginTop: 8 },
   shortcut: {

@@ -1,7 +1,8 @@
-import {Pressable,Text,View} from 'react-native';
+import { Text } from '@/components/Typography/Typography';
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
+import {StyleSheet,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {NumberStepperField} from '@/components/NumberStepperField/NumberStepperField';
-import {Action} from '@/components/ScreenControls/ScreenControls';
 import {useTheme} from '@/theme/ThemeContext';
 import {fromKilograms} from '@/utils/weight';
 import {displayNumber} from '@/utils/stats';
@@ -17,10 +18,22 @@ export function SetEditor({type,sets,onChange}:{type:ExerciseType;sets:EditableS
                 <Text style={{width:16,color:colors.textSecondary}}>{index+1}</Text>
                 <NumberStepperField compact label="Повторы" value={set.reps} onChange={reps=>update(index,{reps})} colors={colors}/>
                 <NumberStepperField compact label={type==='bodyweight'?'Утяжеление, кг':type==='assisted'?'Помощь, кг':'Вес, кг'} value={set.weight} decimal step={2.5} onChange={weight=>update(index,{weight})} colors={colors}/>
-                <Pressable accessibilityLabel={`Удалить подход ${index+1}`} onPress={()=>onChange(sets.filter((_,i)=>i!==index))} hitSlop={8}><Ionicons name="trash-outline" size={20} color={colors.danger}/></Pressable>
+                <ScalePressable accessibilityLabel={`Удалить подход ${index+1}`} onPress={()=>onChange(sets.filter((_,i)=>i!==index))} hitSlop={8}><Ionicons name="trash-outline" size={20} color={colors.danger}/></ScalePressable>
             </View>
             <Text style={{fontSize:11,color:colors.textSecondary,textAlign:'right',marginRight:26}}>{displayNumber(fromKilograms(set.weight,'lb'))} lb</Text>
         </View>)}
-        <Action title="+ Добавить подход" onPress={()=>onChange([...sets,nextSet(sets)])}/>
+        <ScalePressable accessibilityRole="button" onPress={()=>onChange([...sets,nextSet(sets)])}
+            style={[styles.add,{backgroundColor:colors.accentTint,borderColor:colors.accentTint}]}>
+            <Ionicons name="add" size={19} color={colors.textPrimary} style={styles.addIcon}/>
+            <Text style={[styles.addLabel,{color:colors.textPrimary}]}>Добавить подход</Text>
+        </ScalePressable>
     </View>;
 }
+
+const styles=StyleSheet.create({
+    add:{minHeight:44,alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:7,
+        paddingHorizontal:12,paddingVertical:6,borderRadius:12,borderWidth:1,
+        elevation:3,shadowColor:'#000',shadowOpacity:0.2,shadowRadius:5,shadowOffset:{width:0,height:2}},
+    addIcon:{backgroundColor:'transparent'},
+    addLabel:{fontSize:14,fontWeight:'600',flexShrink:1,backgroundColor:'transparent'},
+});

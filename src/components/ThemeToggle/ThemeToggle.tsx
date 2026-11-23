@@ -1,7 +1,8 @@
+import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/ThemeToggle.tsx
 import { useTheme, useThemeMode } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 export function ThemeToggle() {
   const colors = useTheme();
@@ -11,7 +12,7 @@ export function ThemeToggle() {
     mode === "dark" ? "moon" : mode === "light" ? "sunny" : "contrast";
 
   return (
-    <Pressable
+    <ScalePressable
       onPress={toggle}
       hitSlop={12}
       style={[
@@ -20,7 +21,7 @@ export function ThemeToggle() {
       ]}
     >
       <Ionicons name={icon} size={20} color={colors.textPrimary} />
-    </Pressable>
+    </ScalePressable>
   );
 }
 

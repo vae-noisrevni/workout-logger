@@ -1,3 +1,4 @@
+import { headingFont } from '@/theme/typography';
 //src/app/(tabs)/_layout.tsx
 import { ThemeToggle } from "@/components/ThemeToggle/ThemeToggle";
 import { useTheme } from "@/theme/ThemeContext";
@@ -14,12 +15,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: { fontFamily: headingFont, fontWeight: "normal", fontSize: 17 },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textSecondary,
       }}
@@ -28,9 +31,10 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Тренировка",
+          tabBarAccessibilityLabel: "Тренировка",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="barbell-outline" size={size} color={iconColor(focused)} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name="barbell-outline" size={30} color={iconColor(focused)} />
           ),
         }}
       />
@@ -38,9 +42,10 @@ export default function TabsLayout() {
         name="exercises"
         options={{
           title: "Упражнения",
+          tabBarAccessibilityLabel: "Упражнения",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="list-outline" size={size} color={iconColor(focused)} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name="list-outline" size={30} color={iconColor(focused)} />
           ),
         }}
       />
@@ -48,9 +53,10 @@ export default function TabsLayout() {
         name="history"
         options={{
           title: "История",
+          tabBarAccessibilityLabel: "История",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="time-outline" size={size} color={iconColor(focused)} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name="time-outline" size={30} color={iconColor(focused)} />
           ),
         }}
       />
@@ -58,14 +64,15 @@ export default function TabsLayout() {
         name="stats"
         options={{
           title: "Статистика",
+          tabBarAccessibilityLabel: "Статистика",
           headerRight: () => <ThemeToggle />,
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="stats-chart-outline" size={size} color={iconColor(focused)} />
+          tabBarIcon: ({ focused }) => (
+            <Ionicons name="stats-chart-outline" size={30} color={iconColor(focused)} />
           ),
         }}
       />
-      <Tabs.Screen name="presets" options={{ title: "Пресеты", headerRight: () => <ThemeToggle />,
-        tabBarIcon: ({ color, size }) => <Ionicons name="albums-outline" color={typeof color === 'string' ? color : colors.textPrimary} size={size} /> }} />
+      <Tabs.Screen name="presets" options={{ title: "Пресеты", tabBarAccessibilityLabel: "Пресеты", headerRight: () => <ThemeToggle />,
+        tabBarIcon: ({ color }) => <Ionicons name="albums-outline" color={typeof color === 'string' ? color : colors.textPrimary} size={30} /> }} />
 
     </Tabs>
   );

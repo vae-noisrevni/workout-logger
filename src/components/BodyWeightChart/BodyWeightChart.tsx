@@ -1,5 +1,6 @@
+import { Text } from '@/components/Typography/Typography';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { ThemeColors } from '@/theme/colors';
 import type { BodyWeightEntry } from '@/types/bodyWeight';
 import { formatWorkoutDate, resolveDate } from '@/utils/date';
@@ -14,7 +15,7 @@ export function BodyWeightChart({ entries, colors }: {
     const [width, setWidth] = useState(0);
     const latest = entries[0];
     const previous = entries[1];
-    if (!latest) return <Text style={{ color: colors.textSecondary }}>Добавьте первый замер</Text>;
+    if (!latest) return <Text style={{ color: colors.textSecondary }}>Пока нет замеров</Text>;
 
     const samples = entries.slice(0, 12).reverse();
     const weights = samples.map((entry) => entry.weight_kg);
@@ -29,14 +30,18 @@ export function BodyWeightChart({ entries, colors }: {
     const diff = previous ? latest.weight_kg - previous.weight_kg : 0;
 
     return <View style={styles.summary}>
-        <Text style={{ fontSize: 26, fontWeight: '700', color: colors.textPrimary }}>
+        <Text style={{ fontSize: 26, fontWeight: '700', fontVariant: ['tabular-nums'], color: colors.textPrimary }}>
             {displayNumber(latest.weight_kg)} кг
         </Text>
         <Text style={{ color: colors.textSecondary }}>
-            {formatWorkoutDate(latest.date)}{previous ? ` · ${diff > 0 ? '+' : ''}${displayNumber(diff)} кг к предыдущему замеру` : ''}
+            Последний замер {formatWorkoutDate(latest.date)}
         </Text>
+        {previous && <Text style={{ color: colors.textPrimary, fontVariant: ['tabular-nums'] }}>
+            {diff > 0 ? '+' : ''}{displayNumber(diff)} кг с предыдущего замера
+        </Text>}
+        {!previous && <Text style={{ color: colors.textSecondary }}>График появится после второго замера</Text>}
         {entries.length > samples.length && <Text style={{ color: colors.textSecondary }}>Последние {samples.length} замеров</Text>}
-        <View accessible accessibilityLabel={samples.map((entry) => `${formatWorkoutDate(entry.date)}, ${displayNumber(entry.weight_kg)} кг`).join('; ')}
+        {previous && <View accessible accessibilityLabel={samples.map((entry) => `${formatWorkoutDate(entry.date)}, ${displayNumber(entry.weight_kg)} кг`).join('; ')}
             style={styles.chart}>
             <View style={styles.scale}>
                 <Text style={{ color: colors.textSecondary }}>{max}</Text>
@@ -64,7 +69,7 @@ export function BodyWeightChart({ entries, colors }: {
                     <Text style={{ color: colors.textSecondary }}>{formatWorkoutDate(latest.date)}</Text>
                 </View>}
             </View>
-        </View>
+        </View>}
     </View>;
 }
 
