@@ -63,8 +63,8 @@ export const SetsSheet = forwardRef<SetsSheetRef, Props>(function SetsSheet(
               fontVariant: ["tabular-nums"],
             }}
           >
-            {exercise.type === "assisted" ? "Помощь " : ""}
-            {displayNumber(best.weight)} кг × {best.reps} повт.
+            {best.reps} повт. × {exercise.type === "assisted" ? "помощь " : ""}
+            {displayNumber(best.weight)} кг
           </Text>
           <Text style={{ color: colors.textSecondary }}>
             {displayNumber(fromKilograms(best.weight, "lb"))} lb

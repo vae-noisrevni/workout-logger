@@ -22,18 +22,18 @@ export function SetEditor({type,sets,onChange}:{type:ExerciseType;sets:EditableS
             </View>
             <Text style={{fontSize:11,color:colors.textSecondary,textAlign:'right',marginRight:26}}>{displayNumber(fromKilograms(set.weight,'lb'))} lb</Text>
         </View>)}
-        <ScalePressable accessibilityRole="button" onPress={()=>onChange([...sets,nextSet(sets)])}
+        <ScalePressable accessibilityRole="button" hitSlop={{top:4,bottom:4}} onPress={()=>onChange([...sets,nextSet(sets)])}
             style={[styles.add,{backgroundColor:colors.accentTint,borderColor:colors.accentTint}]}>
-            <Ionicons name="add" size={19} color={colors.textPrimary} style={styles.addIcon}/>
+            <Ionicons name="add" size={16} color={colors.textPrimary} style={styles.addIcon}/>
             <Text style={[styles.addLabel,{color:colors.textPrimary}]}>Добавить подход</Text>
         </ScalePressable>
     </View>;
 }
 
 const styles=StyleSheet.create({
-    add:{minHeight:44,alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:7,
-        paddingHorizontal:12,paddingVertical:6,borderRadius:12,borderWidth:1,
+    add:{minHeight:36,alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:5,
+        paddingHorizontal:9,paddingVertical:4,borderRadius:10,borderWidth:1,
         elevation:3,shadowColor:'#000',shadowOpacity:0.2,shadowRadius:5,shadowOffset:{width:0,height:2}},
     addIcon:{backgroundColor:'transparent'},
-    addLabel:{fontSize:14,fontWeight:'600',flexShrink:1,backgroundColor:'transparent'},
+    addLabel:{fontSize:12,fontWeight:'600',flexShrink:1,backgroundColor:'transparent'},
 });
