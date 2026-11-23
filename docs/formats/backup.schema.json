@@ -175,6 +175,7 @@
           },
           "exercises": {
             "type": "array",
+            "description": "Упорядоченные записи упражнений тренировки. Один exercise_id может встречаться в нескольких записях.",
             "items": {
               "type": "object",
               "required": [

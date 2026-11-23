@@ -14,6 +14,15 @@ const text=(value:unknown,where:string)=>typeof value==='string'?value:fail(wher
 const id=(value:unknown,where:string):number=>typeof value==='number'&&Number.isSafeInteger(value)&&value>0?value:fail(where);
 const finite=(value:unknown,where:string):number=>typeof value==='number'&&Number.isFinite(value)&&value>=0?value:fail(where);
 const unique=(values:number[],where:string)=>{if(new Set(values).size!==values.length)fail(`повторяющийся ID ${where}`);};
+function checkUniqueNames(items:{name:string}[],error:(name:string)=>string) {
+    const names = new Set<string>();
+    for (const {name} of items) {
+        const normalized = name.trim().toLowerCase();
+        if (names.has(normalized)) fail(error(name));
+        names.add(normalized);
+    }
+}
+
 export function parseDataFile(source:string,kind:DataFile['kind']):DataFile{
     let raw:unknown;try{raw=JSON.parse(source.replace(/^\uFEFF/,''));}catch{throw new Error('Файл не является JSON');}
     const root=object(raw,'корень файла');
@@ -44,7 +53,13 @@ export function parseDataFile(source:string,kind:DataFile['kind']):DataFile{
         return {id:id(p.id,'ID пресета'),name,archived:Number(archived),exercises:plan,exercise_ids:plan.map(e=>e.exercise_id)};
     });unique(presets.map(p=>p.id),'пресетов');
     if(kind==='workout-logger-presets'){
-        if(!presets.length||presets.some(p=>!p.exercises.length||p.archived))fail('перенос пресетов: нужен непустой активный пресет');
+        if(!presets.length)fail('для переноса нужен хотя бы один активный пресет');
+        for (const preset of presets) {
+            if (preset.archived) fail(`пресет «${preset.name}» в архиве`);
+            if (!preset.exercises.length) fail(`в пресете «${preset.name}» нет упражнений`);
+        }
+        checkUniqueNames(exercises, name => `неоднозначное упражнение в файле «${name}»`);
+        checkUniqueNames(presets, name => `повтор названия пресета в файле «${name}»`);
         return {kind,version:1,exportedAt,exercises,presets,workouts:[],bodyWeight:[]};
     }
     const presetIds=new Set(presets.map(p=>p.id));
@@ -53,7 +68,7 @@ export function parseDataFile(source:string,kind:DataFile['kind']):DataFile{
         if(!resolved)fail(`тренировка ${index+1}: дата «${date}»`);
         const preset_id=w.preset_id==null?null:id(w.preset_id,'ID пресета тренировки');
         if(preset_id!==null&&!presetIds.has(preset_id))fail(`тренировка ${index+1}: неизвестный пресет`);
-        const plan=readPlan(w.exercises,`тренировка ${index+1}`);unique(plan.map(e=>e.exercise_id),`упражнений тренировки ${index+1}`);
+        const plan=readPlan(w.exercises,`тренировка ${index+1}`);
         const name=text(w.name,'название тренировки');if(!name.trim())fail('пустое название тренировки');
         return {id:id(w.id,'ID тренировки'),name,date:resolved!.toISOString(),comment:text(w.comment,'комментарий тренировки'),preset_id,
             preset_name:w.preset_name==null?null:text(w.preset_name,'снимок названия пресета'),exercises:plan};

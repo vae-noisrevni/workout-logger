@@ -18,9 +18,9 @@ function harness(initialSql = '') {
             return { changes: Number(result.changes), lastInsertRowId: Number(result.lastInsertRowid) };
         },
         runAsync: async (sql,args=[]) => db.runSync(sql,args),
-        withExclusiveTransactionAsync: async (callback) => {
+        withTransactionAsync: async (callback) => {
             sqlite.exec('BEGIN');
-            try { await callback(db); sqlite.exec('COMMIT'); }
+            try { await callback(); sqlite.exec('COMMIT'); }
             catch(error) { sqlite.exec('ROLLBACK'); throw error; }
         },
         withTransactionSync: (callback) => {

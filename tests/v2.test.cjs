@@ -18,8 +18,9 @@ test('Мутации пресетов обновляют два активных
         await run(presetService.save,{name:'Понедельник',exercises:[{exercise_id:id,sets:[{reps:6,weight:10}]}]});
         assert.equal(a.getCurrentResult().data[0].name,'Понедельник');assert.equal(b.getCurrentResult().data.length,1);
         const preset=a.getCurrentResult().data[0];
-        await run(presetService.save,{...preset,name:'Среда'});
+        await run(presetService.save,{...preset,name:'Среда',exercises:[{exercise_id:id,sets:[{reps:6,weight:20}]}]});
         assert.equal(b.getCurrentResult().data[0].name,'Среда');
+        assert.deepEqual(b.getCurrentResult().data[0].exercises[0].sets,[{reps:6,weight:20}]);
         await run(presetService.remove,preset.id);
         assert.equal(a.getCurrentResult().data.length,0);assert.equal(b.getCurrentResult().data.length,0);
     }finally{unsubs.forEach(fn=>fn());client.clear();h.sqlite.close();}
@@ -35,6 +36,12 @@ test('Общий бэкап сохраняет связи дублей, комм
         await presetService.save({name:'План',exercises:[{exercise_id:id2,sets:[{reps:6,weight:10},{reps:8,weight:5}]}]});
         const preset=(await presetService.list())[0];
         await workoutService.save({input:{name:'Занятие',date:'2026.02.23',comment:'Точно',preset_id:preset.id,preset_name:'План',exercises:[{exercise_id:id2,comment:'С диском\nПлавно',sets:[{reps:6,weight:10}]}]}});
+        const {parseWorkouts}=h.load('src/utils/importHistory');
+        const legacy=JSON.stringify([{name:'Из истории',date:'2026-02-22',exercises:[
+            {name:'Турник',comment:'До отдыха',sets:[{reps:12,weight:0}]},
+            {name:'Турник',comment:'После отдыха',sets:[{reps:5,weight:2.125}]},
+        ]}]);
+        await workoutService.import(parseWorkouts(legacy,'json'));
         await bodyWeightService.save({date:'23.02.2026',weight:78.65});
         const transfer=h.load('src/services/transfer').transferService;
         const original=await transfer.export('workout-logger-backup');
@@ -58,18 +65,53 @@ test('Отдельный перенос пресета создаёт упраж
     const h=harness();
     try{
         await h.load('src/db/init').initializeDatabase();const transfer=h.load('src/services/transfer').transferService;
+        await assert.rejects(()=>transfer.export('workout-logger-presets'),/хотя бы один активный пресет/);
         const input={kind:'workout-logger-presets',version:1,exportedAt:new Date().toISOString(),exercises:[{id:9,name:'Жим',type:'weighted',description:'',color:'#112233',is_favorite:true,weight_unit:'kg'}],
             presets:[{id:7,name:'Пятница',exercises:[{exercise_id:9,sets:[{reps:10,weight:40}]}]}]};
         assert.deepEqual(await transfer.importPresets(JSON.stringify(input)),{added:1,skipped:0});
-        assert.deepEqual(await transfer.importPresets(JSON.stringify(input)),{added:0,skipped:1});
+        const exported=await transfer.export('workout-logger-presets');
+        assert.deepEqual(await transfer.importPresets(JSON.stringify(exported)),{added:0,skipped:1});
         input.presets[0].exercises[0].sets[0].weight=50;
         await assert.rejects(()=>transfer.importPresets(JSON.stringify(input)),/другим планом/);
         const before=await transfer.export('workout-logger-backup');
         await h.load('src/services/data').exerciseService.create({name:'Жим',type:'weighted',description:'Дубль',color:'#112233',is_favorite:false});
         await assert.rejects(()=>transfer.importPresets(JSON.stringify(input)),/Неоднозначное упражнение/);
-        assert.equal((await h.load('src/services/data').presetService.list())[0].exercises[0].sets[0].weight,40);
+        const {exerciseService,presetService}=h.load('src/services/data');
+        const [preset]=await presetService.list();
+        assert.equal(preset.exercises[0].sets[0].weight,40);
         assert.equal(before.presets.length,1);
+        const conflictingId=await presetService.save({name:'пятница',exercises:preset.exercises});
+        await assert.rejects(()=>transfer.export('workout-logger-presets'),/повтор названия пресета/i);
+        await presetService.remove(conflictingId);
+        await exerciseService.remove(preset.exercise_ids[0]);
+        await assert.rejects(()=>transfer.export('workout-logger-presets'),/в пресете «Пятница» нет упражнений/);
     }finally{h.sqlite.close();}
+});
+
+test('Чтение ждёт окончания транзакции и видит состояние после отката',async()=>{
+    const h=harness();
+    const gate=Promise.withResolvers();
+    try {
+        await h.load('src/db/init').initializeDatabase();
+        const {databaseApi}=h.load('src/db/api');
+        const inserted=Promise.withResolvers();
+        const write=databaseApi.transaction(async db=>{
+            await db.runAsync('INSERT INTO body_weight_entries(date,weight_kg) VALUES(?,?)',['2026-02-23',78.65]);
+            inserted.resolve();
+            await gate.promise;
+            throw new Error('Сбой записи');
+        });
+        const rolledBack=assert.rejects(write,/Сбой записи/);
+        await Promise.race([inserted.promise,write]);
+        const read=databaseApi.all('SELECT weight_kg FROM body_weight_entries');
+        await Promise.resolve();
+        gate.resolve();
+        await rolledBack;
+        assert.deepEqual(await read,[]);
+    } finally {
+        gate.resolve();
+        h.sqlite.close();
+    }
 });
 
 test('Даты и утяжеление: строгий разбор, локальный день и прогресс при равном весе',()=>{

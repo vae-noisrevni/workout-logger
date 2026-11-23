@@ -53,6 +53,16 @@
               "weight": 10
             }
           ]
+        },
+        {
+          "exercise_id": 1,
+          "comment": "После отдыха",
+          "sets": [
+            {
+              "reps": 5,
+              "weight": 2.125
+            }
+          ]
         }
       ]
     }
