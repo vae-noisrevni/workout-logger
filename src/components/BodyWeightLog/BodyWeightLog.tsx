@@ -1,10 +1,10 @@
+import { BodyWeightChart } from '@/components/BodyWeightChart/BodyWeightChart';
 import { DateField } from '@/components/DateField/DateField';
-import { dateKey, formatWorkoutDate } from '@/utils/date';
+import { dateKey, formatWorkoutDate, todayInputDate } from '@/utils/date';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeContext';
 import { useBodyWeight } from '@/hooks/useBodyWeight';
-import { todayInputDate } from '@/utils/date';
 import { displayNumber } from '@/utils/stats';
 import { Action, Field, Heading, Panel } from '@/components/ScreenControls/ScreenControls';
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
@@ -17,9 +17,10 @@ export function BodyWeightLog() {
     const [editing, setEditing] = useState<number | null>(null);
     const [date, setDate] = useState(todayInputDate);
     const [weight, setWeight] = useState('');
+    const [formVisible, setFormVisible] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [formError, setFormError] = useState('');
-    const edit = (entry: BodyWeightEntry) => { setEditing(entry.id); setDate(entry.date); setWeight(String(entry.weight_kg)); setFormError(''); };
+    const edit = (entry: BodyWeightEntry) => { setFormVisible(true); setEditing(entry.id); setDate(entry.date); setWeight(String(entry.weight_kg)); setFormError(''); };
     const save = async () => {
         const duplicate = entries.find((entry) => dateKey(entry.date) === dateKey(date) && entry.id !== editing);
         if (duplicate) {
@@ -28,17 +29,27 @@ export function BodyWeightLog() {
             return;
         }
         try {
-            await saveEntry({date:date.trim(),weight:Number(weight.trim().replace(',', '.')),id:editing ?? undefined}); setWeight(''); setDate(todayInputDate()); setEditing(null); setFormError('');
+            await saveEntry({date:date.trim(),weight:Number(weight.trim().replace(',', '.')),id:editing ?? undefined}); setWeight(''); setDate(todayInputDate()); setEditing(null); setFormVisible(false); setFormError('');
         } catch (error) { setFormError(error instanceof Error ? error.message : 'Не удалось сохранить замер'); }
     };
     return <Panel>
         <Heading>Вес тела</Heading>
         {(error || formError) && <Text style={{ color: colors.danger }}>{error || formError}</Text>}
-        <DateField label="Дата замера" value={date} onChangeText={setDate} autoCorrect={false} />
-        <Field label="Вес тела (кг)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
-        <Action title={editing === null ? 'Добавить замер' : 'Сохранить замер'} onPress={save} disabled={pending} />
-        {editing !== null && <Action title="Отменить редактирование" onPress={() => { setEditing(null); setWeight(''); setDate(todayInputDate()); setFormError(''); }} />}
-        <Action title={`${expanded ? 'Скрыть' : 'Показать'} замеры (${entries.length})`} onPress={() => setExpanded(!expanded)} />
+        <BodyWeightChart entries={entries} colors={colors} />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+            {!formVisible && <Action grow title="Добавить замер" onPress={() => setFormVisible(true)} />}
+            {!!entries.length && <Action grow title={`${expanded ? 'Скрыть' : 'Замеры'} (${entries.length})`} onPress={() => setExpanded(!expanded)} />}
+        </View>
+        {formVisible && <>
+            <DateField label="Дата замера" value={date} onChangeText={setDate} autoCorrect={false} />
+            <Field label="Вес тела (кг)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Action grow title={editing === null ? 'Добавить' : 'Сохранить'} onPress={save} disabled={pending} />
+                <Action grow title="Отмена" disabled={pending} onPress={() => {
+                    setFormVisible(false); setEditing(null); setWeight(''); setDate(todayInputDate()); setFormError('');
+                }} />
+            </View>
+        </>}
         {expanded && entries.map((entry) => <View key={entry.id} style={{ gap: 8, paddingVertical: 8 }}>
             <Text style={{ color: colors.textPrimary }}>{formatWorkoutDate(entry.date)} · {displayNumber(entry.weight_kg)} кг</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -50,6 +61,5 @@ export function BodyWeightLog() {
                     } }] })} />
             </View>
         </View>)}
-        {!entries.length && <Text style={{ color: colors.textSecondary }}>Добавьте первый замер</Text>}
     </Panel>;
 }

@@ -1,3 +1,4 @@
+import { FlatList } from 'react-native-gesture-handler';
 import { ExerciseForm } from '@/components/ExerciseForm/ExerciseForm';
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
 import { ExerciseRow } from '@/components/ExerciseRow/ExerciseRow';
@@ -10,7 +11,6 @@ import BottomSheet from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
 import {
-    FlatList,
     Pressable,
     StyleSheet,
     Text,

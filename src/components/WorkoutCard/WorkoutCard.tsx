@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { WeightValue } from '@/components/WeightValue/WeightValue';
 // src/components/WorkoutCard/WorkoutCard.tsx
 import { EXERCISE_TYPE_ICONS } from '@/constants/exerciseIcons';
@@ -11,9 +12,10 @@ interface Props {
     colors: ThemeColors;
     onPress: () => void;
     onRemove: () => void;
+    dragHandle: ReactNode;
 }
 
-export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
+export function WorkoutCard({ exercise, colors, onPress, onRemove, dragHandle }: Props) {
     return (
         <Pressable
             onPress={onPress}
@@ -40,9 +42,11 @@ export function WorkoutCard({ exercise, colors, onPress, onRemove }: Props) {
                     >
                         {exercise.name}
                     </Text>
+                    {dragHandle}
                     <Pressable
+                        accessibilityLabel="Убрать упражнение"
                         onPress={onRemove}
-                        hitSlop={14}
+                        hitSlop={6}
                         style={styles.removeButton}
                     >
                         <Ionicons

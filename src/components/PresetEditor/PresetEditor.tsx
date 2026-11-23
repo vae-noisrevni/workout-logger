@@ -30,7 +30,9 @@ export function PresetEditor({preset,initialExercises=[],onSaved,onCancel}:{pres
             <SetEditor type={exercise.type} sets={entry.sets} onChange={sets=>setPlan(plan.map(e=>e.exercise_id===entry.exercise_id?{...e,sets}:e))}/>
         </Panel>;})}
         {!!error&&<Text style={{color:colors.danger}}>{error}</Text>}
-        <Action title="Сохранить пресет" selected disabled={pending||!name.trim()||!visible.length} onPress={async()=>{try{await save({id:preset?.id,name,exercises:visible});onSaved();}catch(error){setError(error instanceof Error?error.message:'Не удалось сохранить');}}}/>
-        <Action title="Отмена" disabled={pending} onPress={onCancel}/>
+        <View style={{flexDirection:'row',gap:8}}>
+            <Action title="Сохранить пресет" grow selected disabled={pending||!name.trim()||!visible.length} onPress={async()=>{try{await save({id:preset?.id,name,exercises:visible});onSaved();}catch(error){setError(error instanceof Error?error.message:'Не удалось сохранить');}}}/>
+            <Action title="Отмена" grow disabled={pending} onPress={onCancel}/>
+        </View>
     </View>;
 }

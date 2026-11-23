@@ -43,6 +43,16 @@ export function draftFromWorkout(workout: Workout): DraftState {
         origin: workout.preset_id != null && workout.preset_name != null
             ? { preset_id: workout.preset_id, preset_name: workout.preset_name } : null };
 }
+export function moveDraftExercise(draft: DraftExercise[], exerciseId: number, targetId: number): DraftExercise[] {
+    const from = draft.findIndex((entry) => entry.exercise_id === exerciseId);
+    const to = draft.findIndex((entry) => entry.exercise_id === targetId);
+    if (from < 0 || to < 0 || from === to) return draft;
+    const next = [...draft];
+    const [entry] = next.splice(from, 1);
+    next.splice(to, 0, entry);
+    return next;
+}
+
 export function exercisesForSave<T extends DraftExercise>(draft: T[]): T[] {
     const filled = draft.filter((exercise) => exercise.sets.length > 0);
     if (!filled.length) throw new Error('Добавьте хотя бы один подход');

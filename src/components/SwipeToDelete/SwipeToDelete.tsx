@@ -1,99 +1,76 @@
-// src/components/SwipeToDelete/SwipeToDelete.tsx
 import { useTheme } from '@/theme/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode, Ref } from 'react';
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import Swipeable, {
-    type SwipeableMethods,
-} from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, {
-    interpolate,
-    useAnimatedStyle,
-    type SharedValue,
-} from 'react-native-reanimated';
+import type { ReactNode } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
+import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-const ACTION_WIDTH = 80;
+const ACTION_WIDTH = 88;
 
-interface Props {
+export function SwipeToDelete({ children, onDelete, radius }: {
     children: ReactNode;
     onDelete: () => void;
     radius: number;
-    ref?: Ref<SwipeableMethods>;
-    containerStyle?: StyleProp<ViewStyle>;
-}
-
-/**
- * Строка списка со свайпом влево для удаления.
- * Список-родитель должен быть FlatList/ScrollView из react-native-gesture-handler,
- * иначе вертикальный скролл конфликтует со свайпом.
- */
-export function SwipeToDelete({
-    children,
-    onDelete,
-    radius,
-    ref,
-    containerStyle,
-}: Props) {
-    return (
-        <Swipeable
-            ref={ref}
-            containerStyle={containerStyle}
-            renderRightActions={(progress) => (
-                <DeleteAction
-                    progress={progress}
-                    radius={radius}
-                    onPress={onDelete}
-                />
-            )}
-            overshootRight={false}
-            rightThreshold={40}
-            // Свайп стартует только после явного горизонтального сдвига,
-            // чтобы диагональное движение пальца уходило в скролл
-            dragOffsetFromLeft={20}
-            dragOffsetFromRight={-20}
-        >
-            {children}
-        </Swipeable>
-    );
-}
-
-function DeleteAction({
-    progress,
-    radius,
-    onPress,
-}: {
-    progress: SharedValue<number>;
-    radius: number;
-    onPress: () => void;
 }) {
     const colors = useTheme();
-    // В закрытом состоянии подложка лежит под карточкой и просвечивает по краям — прячем её
-    const style = useAnimatedStyle(() => ({
-        opacity: interpolate(progress.value, [0, 0.15], [0, 1], 'clamp'),
+    const offset = useSharedValue(0);
+    const start = useSharedValue(0);
+    const opened = useSharedValue(false);
+    const pan = usePanGesture({
+        activeOffsetX: [-22, 22],
+        failOffsetY: [-10, 10],
+        maxPointers: 1,
+        onActivate: () => {
+            'worklet';
+            start.value = opened.value ? -ACTION_WIDTH : 0;
+        },
+        onUpdate: ({ translationX }) => {
+            'worklet';
+            offset.value = Math.min(0, Math.max(-ACTION_WIDTH, start.value + translationX));
+        },
+        onDeactivate: ({ canceled }) => {
+            'worklet';
+            if (!canceled) opened.value = offset.value <= -ACTION_WIDTH / 2;
+            offset.value = withTiming(opened.value ? -ACTION_WIDTH : 0);
+        },
+    });
+    const rowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+    const actionStyle = useAnimatedStyle(() => ({
+        opacity: Math.min(1, -offset.value / 12),
+        pointerEvents: opened.value ? 'auto' : 'none',
     }));
+    const coverStyle = useAnimatedStyle(() => ({
+        pointerEvents: opened.value ? 'auto' : 'none',
+    }));
+    const actionProps = useAnimatedProps(() => ({
+        accessibilityElementsHidden: !opened.value,
+        importantForAccessibility: opened.value ? 'auto' as const : 'no-hide-descendants' as const,
+    }));
+    const close = () => {
+        opened.set(false);
+        offset.set(withTiming(0));
+    };
 
-    return (
-        <Animated.View style={[styles.wrapper, style]}>
-            <Pressable
-                onPress={onPress}
-                accessibilityRole="button"
-                accessibilityLabel="Удалить"
-                style={[
-                    styles.action,
-                    { backgroundColor: colors.danger, borderRadius: radius },
-                ]}
-            >
-                <Ionicons name="trash-outline" size={22} color="#fff" />
-            </Pressable>
-        </Animated.View>
-    );
+    return <GestureDetector gesture={pan} touchAction="pan-y">
+        <View style={{ overflow: 'hidden', borderRadius: radius }}>
+            <Animated.View animatedProps={actionProps} style={[styles.action, actionStyle]}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Удалить"
+                    onPress={() => { close(); onDelete(); }}
+                    style={[styles.button, { backgroundColor: colors.danger, borderRadius: radius }]}>
+                    <Ionicons name="trash-outline" size={22} color="#fff" />
+                </Pressable>
+            </Animated.View>
+            <Animated.View style={rowStyle}>
+                {children}
+                <Animated.View style={[StyleSheet.absoluteFill, coverStyle]}>
+                    <Pressable accessible={false} style={StyleSheet.absoluteFill} onPress={close} />
+                </Animated.View>
+            </Animated.View>
+        </View>
+    </GestureDetector>;
 }
 
 const styles = StyleSheet.create({
-    wrapper: { width: ACTION_WIDTH + 8, paddingLeft: 8 },
-    action: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    action: { position: 'absolute', right: 0, top: 0, bottom: 0, width: ACTION_WIDTH, paddingLeft: 8 },
+    button: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

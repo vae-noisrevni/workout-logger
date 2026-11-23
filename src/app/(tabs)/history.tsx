@@ -1,3 +1,4 @@
+import { FlatList } from 'react-native-gesture-handler';
 // src/app/(tabs)/history.tsx
 import { useDialog } from '@/components/ConfirmDialog/DialogProvider';
 import { useWorkoutDraftContext } from '@/context/WorkoutDraftContext';
@@ -12,7 +13,7 @@ import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SwipeToDelete } from '@/components/SwipeToDelete/SwipeToDelete';
 
 import type { Workout } from '@/types/workouts';

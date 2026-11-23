@@ -1,6 +1,6 @@
 import type { SetEntry, Workout, DraftExercise } from '@/types/workouts';
 import type { WorkoutPreset } from '@/types/presets';
-import { emptyDraftState, restoreDraft, serializeDraft, draftFromWorkout, draftFromPreset } from '@/utils/draft';
+import { emptyDraftState, restoreDraft, serializeDraft, draftFromWorkout, draftFromPreset, moveDraftExercise } from '@/utils/draft';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 export type { EditingWorkout } from '@/utils/draft';
@@ -39,6 +39,8 @@ export function useWorkoutDraft() {
     const addExercise = useCallback((exerciseId: number) => changeDraft((prev) => prev.some((entry) => entry.exercise_id === exerciseId)
         ? prev : [...prev, { exercise_id: exerciseId, sets: [createEmptySet()] }]), [changeDraft]);
     const removeExercise = useCallback((exerciseId: number) => changeDraft((prev) => prev.filter((entry) => entry.exercise_id !== exerciseId)), [changeDraft]);
+    const moveExercise = useCallback((exerciseId: number, targetId: number) =>
+        changeDraft((prev) => moveDraftExercise(prev, exerciseId, targetId)), [changeDraft]);
     const updateExerciseComment = useCallback((exerciseId: number, comment: string) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
         ? { ...entry, comment } : entry)), [changeDraft]);
     const addSet = useCallback((exerciseId: number) => changeDraft((prev) => prev.map((entry) => entry.exercise_id === exerciseId
@@ -53,5 +55,5 @@ export function useWorkoutDraft() {
     const loadPreset = useCallback((preset: WorkoutPreset, withoutSets = true) => { if (hydrated) setState(draftFromPreset(preset, withoutSets)); }, [hydrated]);
     const reset = useCallback(() => { if (hydrated) setState(emptyDraftState()); }, [hydrated]);
     const retryRestore = () => setRestoreAttempt((attempt) => attempt + 1);
-    return { ...state, retryRestore, hydrated, storageError, updateExerciseComment, addExercise, removeExercise, addSet, updateSet, removeSet, replaceSets, loadWorkout, loadPreset, reset };
+    return { ...state, retryRestore, hydrated, storageError, updateExerciseComment, addExercise, removeExercise, moveExercise, addSet, updateSet, removeSet, replaceSets, loadWorkout, loadPreset, reset };
 }

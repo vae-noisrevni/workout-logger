@@ -166,3 +166,41 @@ test('Комментарий упражнения и единица веса п�
         assert.throws(() => parseWorkouts('date,workout,exercise,reps,weight_kg,exercise_comment\n2026-11-15,Старая,Жим,10,50,Первый\n2026-11-15,Старая,Жим,8,50,Другой', 'csv'));
     } finally { sqlite.close(); }
 });
+
+test('Новый порядок упражнений сохраняется в черновике и истории', async () => {
+    const h = harness();
+    try {
+        await h.load('src/db/init').initializeDatabase();
+        const { exerciseService, workoutService } = h.load('src/services/data');
+        const { emptyDraftState, moveDraftExercise, restoreDraft, serializeDraft, exercisesForSave } = h.load('src/utils/draft');
+        const draft = [];
+        for (const [index, name] of ['Жим', 'Тяга', 'Присед'].entries()) {
+            const exercise_id = await exerciseService.create({
+                name, type: 'weighted', description: '', color: '#123456', is_favorite: false,
+            });
+            draft.push({
+                exercise_id, comment: name,
+                sets: [{ id: String(index), reps: 5 + index, weight: 20.125 + index }],
+            });
+        }
+
+        const moved = moveDraftExercise(draft, draft[0].exercise_id, draft[2].exercise_id);
+        const restored = restoreDraft(serializeDraft({ ...emptyDraftState(), draft: moved }), null);
+        const expected = [draft[1], draft[2], draft[0]];
+        assert.deepEqual(restored.draft, expected);
+        assert.deepEqual(moveDraftExercise(moved, draft[0].exercise_id, draft[1].exercise_id), draft);
+
+        await workoutService.save({ input: {
+            name: 'Тренировка', date: '2026-02-23', comment: '',
+            exercises: exercisesForSave(restored.draft),
+        } });
+        const [saved] = await workoutService.list();
+        assert.deepEqual(saved.exercises.map(({ exercise_id, comment, sets }) => ({
+            exercise_id, comment, sets: sets.map(({ reps, weight }) => ({ reps, weight })),
+        })), expected.map(({ exercise_id, comment, sets }) => ({
+            exercise_id, comment, sets: sets.map(({ reps, weight }) => ({ reps, weight })),
+        })));
+    } finally {
+        h.sqlite.close();
+    }
+});

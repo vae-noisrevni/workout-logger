@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme/ThemeContext';
 
-export function Action({ title, onPress, disabled = false, danger = false, selected = false }: {
+export function Action({ title, onPress, disabled = false, danger = false, selected = false, icon, grow = false }: {
     title: string; onPress: () => void; disabled?: boolean; danger?: boolean; selected?: boolean;
+    icon?: keyof typeof Ionicons.glyphMap; grow?: boolean;
 }) {
     const colors = useTheme();
-    return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress}
-        style={{ padding: 12, minHeight: 44, borderRadius: 10, borderWidth: 1,
+    return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress}
+        style={{ padding: icon ? 10 : grow ? 8 : 12, minHeight: 44, flex: grow ? 1 : undefined,
+            justifyContent: 'center', alignItems: icon || grow ? 'center' : undefined, borderRadius: 10, borderWidth: 1,
             backgroundColor: selected ? colors.accent : undefined,
             borderColor: danger ? colors.danger : selected ? colors.accent : colors.border, opacity: disabled ? 0.4 : 1 }}>
-        <Text style={{ color: danger ? colors.danger : selected ? colors.textInverse : colors.accent, fontWeight: '600' }}>{title}</Text>
+        {icon ? <Ionicons name={icon} size={22} color={danger ? colors.danger : colors.accent} /> : <Text style={{ textAlign: grow ? 'center' : undefined, color: danger ? colors.danger : selected ? colors.textInverse : colors.accent, fontWeight: '600' }}>{title}</Text>}
     </Pressable>;
 }
 export function Panel({ children }: { children: ReactNode }) {

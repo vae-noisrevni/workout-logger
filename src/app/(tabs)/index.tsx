@@ -35,7 +35,7 @@ import {
 
 export default function WorkoutScreen() {
     const colors = useTheme();
-    const { exercises } = useExercises();
+    const { exercises, allExercises } = useExercises();
     const { presets, error: presetsError } = usePresets();
     const [presetSheet, setPresetSheet] = useState<'pick' | 'create' | null>(null);
     const [withoutSets, setWithoutSets] = useState(true);
@@ -49,6 +49,11 @@ export default function WorkoutScreen() {
     const resolvedDraft = useMemo(
         () => resolveDraft(draft.draft, exercises),
         [draft.draft, exercises],
+    );
+
+    const exercisesById = useMemo(
+        () => new Map(allExercises.map((exercise) => [exercise.id, exercise])),
+        [allExercises],
     );
 
     // Упражнения из текущей тренировки не исключаем: повторное нажатие просто открывает его подходы
@@ -166,13 +171,13 @@ export default function WorkoutScreen() {
             {draft.storageError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{draft.storageError}</Text>}
             {!draft.hydrated && draft.storageError && <Action title="Повторить загрузку черновика" onPress={draft.retryRestore} />}
             {presetsError && <Text style={{ color: colors.danger, marginHorizontal: 16 }}>{presetsError}</Text>}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 16, marginBottom: 10 }}>
-                <Action title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => { setWithoutSets(true); setPresetSheet('pick'); }} />
-                <Action title="Сохранить как пресет" disabled={!draft.hydrated || !resolvedDraft.length} onPress={() => setPresetSheet('create')} />
+            <View style={styles.actions}>
+                <Action grow title="Выбрать пресет" disabled={!draft.hydrated} onPress={() => { setWithoutSets(true); setPresetSheet('pick'); }} />
+                <Action grow title="Сохранить как пресет" disabled={!draft.hydrated || !resolvedDraft.length} onPress={() => setPresetSheet('create')} />
+                {draft.hydrated && !draft.editing && draft.draft.length > 0 &&
+                    <Action title="Очистить текущую тренировку" icon="trash-outline" danger
+                        onPress={() => dialog.show({ title: 'Очистить черновик?', message: 'Несохранённая тренировка будет удалена.', buttons: [{ text: 'Отмена', style: 'cancel' }, { text: 'Очистить', style: 'destructive', onPress: draft.reset }] })} />}
             </View>
-            {draft.hydrated && !draft.editing && draft.draft.length > 0 && <View style={{ marginHorizontal: 16, marginBottom: 8 }}>
-                <Action title="Очистить текущую тренировку" onPress={() => dialog.show({ title: 'Очистить черновик?', message: 'Несохранённая тренировка будет удалена.', buttons: [{ text: 'Отмена', style: 'cancel' }, { text: 'Очистить', style: 'destructive', onPress: draft.reset }] })}/>
-            </View>}
             {draft.origin && <Text style={{ color: colors.textSecondary, marginHorizontal: 16, marginBottom: 8 }}>Пресет: {draft.origin.preset_name}</Text>}
             {draft.editing && (
                 <View
@@ -251,6 +256,7 @@ export default function WorkoutScreen() {
                 colors={colors}
                 onCardPress={handleCardPress}
                 onCardRemove={draft.removeExercise}
+                onMove={draft.moveExercise}
             />
 
             <FinishFab
@@ -273,7 +279,30 @@ export default function WorkoutScreen() {
                     : <>
                         <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: '700' }}>Выбрать пресет</Text>
                         <Action title={`${withoutSets ? '☑' : '☐'} Без подходов`} onPress={() => setWithoutSets(!withoutSets)} />
-                        {presets.map((preset) => <Action key={preset.id} title={preset.name} disabled={!preset.exercise_ids.length} onPress={() => choosePreset(preset)} />)}
+                        {presets.map((preset) => (
+                            <Pressable key={preset.id} accessibilityRole="button" disabled={!preset.exercises.length}
+                                accessibilityLabel={preset.name} onPress={() => choosePreset(preset)}
+                                style={({ pressed }) => [styles.presetCard, {
+                                    backgroundColor: colors.surface, borderColor: colors.border,
+                                    opacity: pressed || !preset.exercises.length ? 0.6 : 1,
+                                }]}>
+                                <View style={styles.presetTitle}>
+                                    <Text style={{ flex: 1, color: colors.textPrimary, fontSize: 17, fontWeight: '700' }}>
+                                        {preset.name}
+                                    </Text>
+                                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                                </View>
+                                {preset.exercises.map(({ exercise_id, sets }) => {
+                                    const exercise = exercisesById.get(exercise_id);
+                                    return <View key={exercise_id} style={styles.presetExercise}>
+                                        <View style={[styles.exerciseDot, { backgroundColor: exercise?.color ?? colors.border }]} />
+                                        <Text style={{ flex: 1, color: colors.textPrimary }}>{exercise?.name ?? 'Упражнение недоступно'}</Text>
+                                        {!withoutSets && <Text style={{ color: colors.textSecondary }}>{sets.length} подх.</Text>}
+                                    </View>;
+                                })}
+                                {!preset.exercises.length && <Text style={{ color: colors.textSecondary }}>Нет упражнений</Text>}
+                            </Pressable>
+                        ))}
                         {!presets.length && <Text style={{ color: colors.textSecondary }}>Создайте пресет на вкладке «Пресеты»</Text>}
                     </>}
             </ThemeSheet>}
@@ -291,6 +320,11 @@ export default function WorkoutScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, paddingTop: 12 },
+    actions: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 10 },
+    presetCard: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 8 },
+    presetTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    presetExercise: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    exerciseDot: { width: 8, height: 8, borderRadius: 4 },
     editBanner: {
         flexDirection: 'row',
         alignItems: 'center',
