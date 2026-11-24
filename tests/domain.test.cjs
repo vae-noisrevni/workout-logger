@@ -204,3 +204,22 @@ test('Новый порядок упражнений сохраняется в �
         h.sqlite.close();
     }
 });
+
+test('Прогресс упражнения выбирает один целый подход по активной метрике', () => {
+    const { load, sqlite } = harness();
+    try {
+        const { bestSetForMetric } = load('src/utils/stats');
+        const heavy = { reps: 5, weight: 65 };
+        const many = { reps: 12, weight: 25 };
+        const manyHeavier = { reps: 12, weight: 40 };
+        const sets = [heavy, many, manyHeavier];
+
+        assert.deepEqual(bestSetForMetric('weighted', sets, 'weight'), heavy);
+        assert.deepEqual(bestSetForMetric('weighted', sets, 'reps'), manyHeavier);
+        assert.deepEqual(bestSetForMetric('assisted', sets, 'weight'), many);
+        assert.deepEqual(bestSetForMetric('assisted', sets, 'reps'), many);
+        assert.equal(bestSetForMetric('weighted', [], 'reps'), null);
+    } finally {
+        sqlite.close();
+    }
+});

@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+import { primaryButton } from '@/theme/primaryButton';
 import { Text } from '@/components/Typography/Typography';
 import { ListSearchHeader } from '@/components/ListSearchHeader/ListSearchHeader';
 import { FlatList } from 'react-native-gesture-handler';
@@ -9,9 +11,9 @@ import { useTheme } from '@/theme/ThemeContext';
 import { Exercise } from '@/types/exercise';
 import { exportExercises, parseExercises } from '@/utils/exerciseTransfer';
 import { pickTextFile, type TransferFormat } from '@/utils/fileTransfer';
-import { BottomSheet } from '@expo/ui/community/bottom-sheet';
+import { ThemeSheet } from '@/components/ThemeSheet/ThemeSheet';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     Pressable,
     StyleSheet,
@@ -39,16 +41,13 @@ export default function ExercisesScreen() {
     } = useExercises();
     const dialog = useDialog();
     const [sheetMode, setSheetMode] = useState<SheetMode>(null);
-    const sheetRef = useRef<BottomSheet>(null);
 
     const openCreate = () => {
         setSheetMode({ type: 'create' });
-        requestAnimationFrame(() => sheetRef.current?.snapToIndex(0));
     };
 
     const openEdit = (exercise: Exercise) => {
         setSheetMode({ type: 'edit', exercise });
-        sheetRef.current?.snapToIndex(0);
     };
 
     const handleExport = useCallback(
@@ -99,7 +98,7 @@ export default function ExercisesScreen() {
         }
     }, [dialog, importData]);
 
-    const closeSheet = () => sheetRef.current?.close();
+    const closeSheet = () => setSheetMode(null);
 
     return (
         <View
@@ -114,7 +113,7 @@ export default function ExercisesScreen() {
             {/* Кнопка добавления */}
             <Pressable
                 onPress={openCreate}
-                style={[styles.addButton, { backgroundColor: colors.accent }]}
+                style={[styles.addButton, primaryButton(colors)]}
             >
                 <Ionicons name="add" size={28} color={colors.textInverse} />
             </Pressable>
@@ -151,35 +150,38 @@ export default function ExercisesScreen() {
                             onPress={() => openEdit(item)}
                             onDelete={() => remove(item.id)}
                             onToggleFavorite={() => toggleFavorite(item)}
+                            onOpenProgress={() => router.push({ pathname: '/exercise/[id]', params: { id: String(item.id) } })}
                         />
                     )}
                 />
             )}
 
             {sheetMode && (
-                <BottomSheet
-                    ref={sheetRef}
-                    snapPoints={['60%', '90%']}
-                    enablePanDownToClose
-                    onClose={() => setSheetMode(null)}
-                    backgroundStyle={{
-                        backgroundColor: colors.surfaceElevated,
-                    }}
-                >
+                <ThemeSheet onClose={closeSheet}>
                     <ExerciseForm
                         mode={sheetMode}
                         colors={colors}
                         onSubmit={async (data) => {
                             try {
                                 if (sheetMode.type === 'create') await create(data);
-                                else await update({ id: sheetMode.exercise.id, ...data });
+                                else {
+                                    const original = sheetMode.exercise;
+                                    const changes = {
+                                        ...(data.name !== original.name.trim() ? { name: data.name } : {}),
+                                        ...(data.type !== original.type ? { type: data.type } : {}),
+                                        ...(data.description !== original.description.trim() ? { description: data.description } : {}),
+                                        ...(data.color !== original.color ? { color: data.color } : {}),
+                                        ...(data.is_favorite !== original.is_favorite ? { is_favorite: data.is_favorite } : {}),
+                                    };
+                                    if (Object.keys(changes).length) await update({ id: original.id, ...changes });
+                                }
                                 closeSheet();
                             } catch {}
                         }}
                         pending={pending}
                         onCancel={closeSheet}
                     />
-                </BottomSheet>
+                </ThemeSheet>
             )}
         </View>
     );

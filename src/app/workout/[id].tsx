@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { headingFont } from '@/theme/typography';
 import { Text } from '@/components/Typography/Typography';
 import { WeightValue } from '@/components/WeightValue/WeightValue';
@@ -253,7 +254,7 @@ export default function WorkoutPreviewScreen() {
                     onPress={() => openInEditor(workout)}
                     style={[
                         styles.editButton,
-                        { backgroundColor: colors.accent },
+                        primaryButton(colors),
                     ]}
                 >
                     <Ionicons

@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { Text } from '@/components/Typography/Typography';
 import { headingFont } from '@/theme/typography';
 import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
@@ -98,12 +99,9 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                                         style={[
                                             styles.button,
                                             filled
-                                                ? {
-                                                      backgroundColor:
-                                                          isDestructive
-                                                              ? colors.danger
-                                                              : colors.accent,
-                                                  }
+                                                ? isDestructive
+                                                    ? { backgroundColor: colors.danger }
+                                                    : primaryButton(colors)
                                                 : {
                                                       backgroundColor:
                                                           colors.surface,

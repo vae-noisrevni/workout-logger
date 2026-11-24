@@ -31,7 +31,7 @@ export function SetEditor({type,sets,onChange}:{type:ExerciseType;sets:EditableS
 }
 
 const styles=StyleSheet.create({
-    add:{minHeight:36,alignSelf:'flex-start',flexDirection:'row',alignItems:'center',gap:5,
+    add:{minHeight:36,alignSelf:'stretch',flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,
         paddingHorizontal:9,paddingVertical:4,borderRadius:10,borderWidth:1,
         elevation:3,shadowColor:'#000',shadowOpacity:0.2,shadowRadius:5,shadowOffset:{width:0,height:2}},
     addIcon:{backgroundColor:'transparent'},

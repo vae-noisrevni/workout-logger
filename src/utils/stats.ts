@@ -16,6 +16,17 @@ export function bestSet(type: ExerciseType, sets: SetLike[]): SetLike | null {
         return best;
     }, null);
 }
+export type ExerciseMetric = 'weight' | 'reps';
+
+export function bestSetForMetric(type: ExerciseType, sets: SetLike[], metric: ExerciseMetric): SetLike | null {
+    if (metric === 'weight') return bestSet(type, sets);
+
+    return sets.reduce<SetLike | null>((best, set) => {
+        if (!best || set.reps > best.reps || (set.reps === best.reps && isBetter(type, set.weight, best.weight))) return set;
+        return best;
+    }, null);
+}
+
 export function bestValue(type: ExerciseType, sets: SetLike[]): number | null {
     const best = bestSet(type, sets);
     return best ? setValue(type, best) : null;

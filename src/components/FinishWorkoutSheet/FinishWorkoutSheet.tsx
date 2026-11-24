@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { Text } from '@/components/Typography/Typography';
 import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 import { Field } from "@/components/ScreenControls/ScreenControls";
@@ -12,12 +13,9 @@ import {
   todayInputDate,
   yesterdayInputDate,
 } from "@/utils/date";
-import {
-  BottomSheet,
-  BottomSheetScrollView,
-} from "@expo/ui/community/bottom-sheet";
+import { ThemeSheet } from "@/components/ThemeSheet/ThemeSheet";
 import { Ionicons } from "@expo/vector-icons";
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 export interface FinishWorkoutSheetRef {
@@ -44,7 +42,7 @@ interface Props {
 
 export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
   ({ colors, exerciseCount, initial, onConfirm, pending }, ref) => {
-    const sheetRef = useRef<BottomSheet>(null);
+    const [visible, setVisible] = useState(false);
     const [name, setName] = useState("");
     const [dateInput, setDateInput] = useState("");
     const [comment, setComment] = useState("");
@@ -56,9 +54,9 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
         setDateInput(initial ? isoToInputDate(initial.date) : todayInputDate());
         setComment(initial?.comment ?? "");
         setDateError(null);
-        sheetRef.current?.snapToIndex(0);
+        setVisible(true);
       },
-      close: () => sheetRef.current?.close(),
+      close: () => setVisible(false),
     }));
 
     const handleConfirm = async () => {
@@ -73,24 +71,16 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
         date: iso,
         comment: comment.trim(),
       });
-      if (saved) sheetRef.current?.close();
+      if (saved) setVisible(false);
     };
 
     const canConfirm = exerciseCount > 0 && name.trim().length > 0;
 
+    if (!visible) return null;
+
     return (
-      <BottomSheet
-        ref={sheetRef}
-        snapPoints={["70%", "90%"]}
-        index={-1}
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: colors.surfaceElevated }}
-      >
-        <BottomSheetScrollView
-          nestedScrollEnabled
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
+      <ThemeSheet onClose={() => setVisible(false)}>
+        <View style={styles.content}>
           <Text style={[styles.title, { color: colors.textPrimary }]}>
             {initial ? "Сохранить изменения" : "Завершить тренировку"}
           </Text>
@@ -171,7 +161,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
           {/* Кнопки */}
           <View style={styles.actions}>
             <ScalePressable
-              onPress={() => sheetRef.current?.close()}
+              onPress={() => setVisible(false)}
               style={[
                 styles.button,
                 {
@@ -189,7 +179,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               style={[
                 styles.button,
                 {
-                  backgroundColor: canConfirm ? colors.accent : colors.border,
+                  ...(canConfirm ? primaryButton(colors) : { backgroundColor: colors.border }),
                 },
               ]}
             >
@@ -209,8 +199,8 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
               </Text>
             </ScalePressable>
           </View>
-        </BottomSheetScrollView>
-      </BottomSheet>
+        </View>
+      </ThemeSheet>
     );
   },
 );
@@ -218,7 +208,7 @@ export const FinishWorkoutSheet = forwardRef<FinishWorkoutSheetRef, Props>(
 FinishWorkoutSheet.displayName = "FinishWorkoutSheet";
 
 const styles = StyleSheet.create({
-  content: { padding: 24, gap: 6 },
+  content: { gap: 6 },
   title: { fontSize: 21, fontFamily: headingFont },
   subtitle: { fontSize: 13, marginBottom: 12 },
   error: { fontSize: 12, marginTop: 4 },

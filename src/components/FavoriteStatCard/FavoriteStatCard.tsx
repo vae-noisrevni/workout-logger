@@ -13,7 +13,7 @@ export function FavoriteStatCard({ exercise, progress, colors, onPress }: {
     exercise: Exercise; progress: ReturnType<typeof exerciseProgress>; colors: ThemeColors; onPress?: () => void;
 }) {
     const last = useLastResult(exercise.id);
-    return <Pressable onPress={onPress} style={{ flexGrow: 1, padding: 16, gap: 8, borderRadius: 12,
+    return <Pressable accessibilityRole={onPress ? 'button' : undefined} onPress={onPress} style={{ flexGrow: 1, padding: 16, gap: 8, borderRadius: 12,
         borderLeftWidth: 5, borderLeftColor: exercise.color, backgroundColor: colors.surface }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name={EXERCISE_TYPE_ICONS[exercise.type]} size={20} color={colors.textSecondary} />

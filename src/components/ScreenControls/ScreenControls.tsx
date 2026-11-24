@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { Text, TextInput } from '@/components/Typography/Typography';
 import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 import { headingFont } from '@/theme/typography';
@@ -13,10 +14,11 @@ export function Action({ title, onPress, disabled = false, danger = false, selec
     const colors = useTheme();
     return <ScalePressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress}
         style={{ padding: icon ? 10 : grow ? 8 : 12, minHeight: 44, flex: grow ? 1 : undefined,
-            justifyContent: 'center', alignItems: icon || grow ? 'center' : undefined, borderRadius: 12, borderWidth: 1,
-            backgroundColor: selected ? colors.accent : colors.surface,
+            justifyContent: 'center', alignItems: icon || grow ? 'center' : undefined, flexDirection: icon ? 'row' : undefined, gap: icon ? 8 : undefined, borderRadius: 12, borderWidth: 1,
+            ...(selected ? primaryButton(colors) : { backgroundColor: colors.surface }),
             borderColor: danger ? colors.danger : selected ? colors.accent : colors.border, opacity: disabled ? 0.4 : 1 }}>
-        {icon ? <Ionicons name={icon} size={22} color={danger ? colors.danger : selected ? colors.textInverse : colors.textPrimary} /> : <Text style={{ textAlign: grow ? 'center' : undefined, color: danger ? colors.danger : selected ? colors.textInverse : colors.textPrimary, fontWeight: '600' }}>{title}</Text>}
+        {icon && <Ionicons name={icon} size={20} color={danger ? colors.danger : selected ? colors.textInverse : colors.textPrimary} />}
+        <Text style={{ flexShrink: 1, textAlign: grow ? 'center' : undefined, color: danger ? colors.danger : selected ? colors.textInverse : colors.textPrimary, fontWeight: '600' }}>{title}</Text>
     </ScalePressable>;
 }
 export function Panel({ children }: { children: ReactNode }) {

@@ -32,3 +32,10 @@ const SHORT=['янв','фев','мар','апр','май','июн','июл','а�
 const DATIVE=['январю','февралю','марту','апрелю','маю','июню','июлю','августу','сентябрю','октябрю','ноябрю','декабрю'];
 export const monthShortLabel=(key:string)=>SHORT[Number(key.slice(5))-1];
 export const monthDativeLabel=(key:string,relativeTo:string)=>`${DATIVE[Number(key.slice(5))-1]}${key.slice(0,4)===relativeTo.slice(0,4)?'':` ${key.slice(0,4)}`}`;
+
+const WEEKDAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+
+export function formatWorkoutWeekday(value: string): string {
+    const date = resolveDate(value);
+    return date ? WEEKDAYS[date.getDay()] : '';
+}

@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { Text } from '@/components/Typography/Typography';
 import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 import { Field } from '@/components/ScreenControls/ScreenControls';
@@ -14,7 +15,6 @@ import {
     EXERCISE_TYPE_LABELS,
     ExerciseType,
 } from '@/types/exercise';
-import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
@@ -47,7 +47,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
     const isValid = name.trim().length > 0;
 
     return (
-        <BottomSheetScrollView nestedScrollEnabled contentContainerStyle={styles.form}>
+        <View style={styles.form}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
                 {mode.type === 'create' ? 'Новое упражнение' : 'Редактировать'}
             </Text>
@@ -165,11 +165,7 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                     disabled={!isValid || pending}
                     style={[
                         styles.button,
-                        {
-                            backgroundColor: isValid
-                                ? colors.accent
-                                : colors.border,
-                        },
+                        isValid ? primaryButton(colors) : { backgroundColor: colors.border },
                     ]}
                 >
                     <Text
@@ -179,12 +175,12 @@ export function ExerciseForm({ mode, colors, onSubmit, onCancel, pending }: Prop
                     </Text>
                 </ScalePressable>
             </View>
-        </BottomSheetScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    form: { padding: 24, gap: 12 },
+    form: { gap: 12 },
     title: { fontSize: 21, fontFamily: headingFont, marginBottom: 8 },
     label: { fontSize: 13, marginTop: 8, marginBottom: 4 },
     typeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },

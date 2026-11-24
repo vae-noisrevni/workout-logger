@@ -15,13 +15,13 @@ interface Props {
     onPress: () => void;
     onDelete: () => void;
     onToggleFavorite: () => void;
+    onOpenProgress: () => void;
 }
 
-export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavorite }: Props) {
+export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavorite, onOpenProgress }: Props) {
     return (
         <SwipeToDelete radius={12} onDelete={onDelete}>
-            <Pressable
-                onPress={onPress}
+            <View
                 style={[
                     styles.row,
                     {
@@ -37,7 +37,8 @@ export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavor
                     ]}
                 />
 
-                <View style={styles.body}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Редактировать упражнение ${exercise.name}`}
+                    onPress={onPress} style={styles.body}>
                     <View style={styles.headerRow}>
                         <Ionicons
                             name={EXERCISE_TYPE_ICONS[exercise.type]}
@@ -84,18 +85,16 @@ export function ExerciseRow({ exercise, colors, onPress, onDelete, onToggleFavor
                             </Text>
                         ) : null}
                     </View>
-                </View>
+                </Pressable>
 
-                <ScalePressable pressedScale={0.82} accessibilityRole="button" onPress={(event) => { event.stopPropagation(); onToggleFavorite(); }} hitSlop={10} accessibilityLabel={exercise.is_favorite ? 'Убрать из избранного' : 'Добавить в избранное'} style={{ padding: 12 }}>
+                <ScalePressable pressedScale={0.82} accessibilityRole="button" onPress={onToggleFavorite} hitSlop={10} accessibilityLabel={exercise.is_favorite ? 'Убрать из избранного' : 'Добавить в избранное'} style={{ padding: 12 }}>
                     <Ionicons name={exercise.is_favorite ? 'heart' : 'heart-outline'} size={24} color={colors.favorite} />
                 </ScalePressable>
-                <Ionicons
-                    name="chevron-forward"
-                    style={styles.chevron}
-                    size={20}
-                    color={colors.textSecondary}
-                />
-            </Pressable>
+                <ScalePressable accessibilityRole="button" accessibilityLabel={`Прогресс упражнения ${exercise.name}`}
+                    style={styles.progress} onPress={onOpenProgress}>
+                    <Ionicons name="stats-chart-outline" size={22} color={colors.textPrimary} />
+                </ScalePressable>
+            </View>
         </SwipeToDelete>
     );
 }
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         overflow: 'hidden',
     },
-    chevron: { marginRight: 14 },
+    progress: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 4 },
     colorBar: { width: 5, alignSelf: 'stretch' },
     body: { flex: 1, padding: 14, gap: 6 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

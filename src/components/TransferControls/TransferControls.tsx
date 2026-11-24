@@ -40,7 +40,7 @@ export function TransferControls({mode}:{mode:'presets'|'all'}){
     const colors = useTheme();
     const { actions, pending } = useTransferActions(mode);
     return <View style={{gap:8}}>
-        {actions.map(({id,title,disabled,onPress})=><Action key={id} title={title} disabled={disabled} onPress={onPress}/>)}
+        {actions.map(({id,icon,title,disabled,onPress})=><Action key={id} icon={icon} title={title} selected disabled={disabled} onPress={onPress}/>)}
         {pending&&<Text style={{color:colors.textSecondary}}>Обработка данных…</Text>}
     </View>;
 }

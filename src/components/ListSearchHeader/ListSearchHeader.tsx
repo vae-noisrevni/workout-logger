@@ -100,7 +100,7 @@ export function ListSearchHeader({ search, onSearchChange, placeholder, actions 
 }
 
 const styles = StyleSheet.create({
-    header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 12 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 12, marginBottom: 8 },
     search: { flex: 1 },
     trigger: { width: 48, height: 48, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)' },

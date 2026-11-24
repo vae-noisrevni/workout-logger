@@ -10,7 +10,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { exportHistory, type ExportFormat } from '@/utils/exportHistory';
 import { pickTextFile } from '@/utils/fileTransfer';
 import { parseWorkouts } from '@/utils/importHistory';
-import { formatWorkoutDate } from '@/utils/date';
+import { formatWorkoutDate, formatWorkoutWeekday } from '@/utils/date';
 import { searchWorkoutHistory } from '@/utils/history';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -198,7 +198,7 @@ export default function HistoryScreen() {
                                 />
                             </View>
                             <Text style={{ color: colors.textSecondary }}>
-                                {formatWorkoutDate(item.date)} · {item.exercises.length}{' '}
+                                {formatWorkoutDate(item.date)}{'\u00a0\u00a0\u00a0'}{formatWorkoutWeekday(item.date)} · {item.exercises.length}{' '}
                                 упр. · {setsCount} подх.
                             </Text>
                             {matchingNames.length > 0 && (

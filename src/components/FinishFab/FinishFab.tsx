@@ -1,3 +1,4 @@
+import { primaryButton } from '@/theme/primaryButton';
 import { ScalePressable } from '@/components/ScalePressable/ScalePressable';
 // src/components/FinishFab/FinishFab.tsx
 import type { ThemeColors } from '@/theme/colors';
@@ -20,7 +21,7 @@ export function FinishFab({ colors, onPress, disabled = false }: Props) {
             style={[
                 styles.fab,
                 {
-                    backgroundColor: colors.accent,
+                    ...primaryButton(colors),
                     opacity: disabled ? 0.4 : 1,
                 },
             ]}

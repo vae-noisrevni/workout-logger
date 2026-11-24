@@ -2,7 +2,7 @@ import { Text } from '@/components/Typography/Typography';
 import { SearchField } from '@/components/SearchField/SearchField';
 import { headingFont } from '@/theme/typography';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useExercises } from '@/hooks/useExercises';
@@ -62,6 +62,7 @@ export function PresetEditor({ preset, initialExercises = [], onSaved, onCancel 
             onMove={(id, targetId) => setPlan((current) => moveDraftExercise(current, id, targetId))}
             handleColor={colors.textSecondary}
             disabled={pending}
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
             nestedScrollEnabled
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
